@@ -1,5 +1,7 @@
-import { Plus, Minus, ArrowLeft, Package } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Minus, ArrowLeft, Package, BarChart3 } from 'lucide-react';
 import ProductTypeSelector from './ProductTypeSelector';
+import ShelfAnalytics from './ShelfAnalytics';
 
 /**
  * Shelf management overlay that appears when a shelf is selected
@@ -9,6 +11,8 @@ import ProductTypeSelector from './ProductTypeSelector';
  * @param {Function} onClose - Callback to close and return to overview
  */
 function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose }) {
+  const [showAnalytics, setShowAnalytics] = useState(false);
+
   if (!shelf) return null;
 
   const handleIncrement = () => {
@@ -31,14 +35,29 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
       <div className="fixed top-6 left-6 z-50">
         <div className="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-4 w-[350px] border-2 border-blue-500">
           {/* Header */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Package size={20} className="text-white" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Package size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">{shelf.label}</h2>
+                <p className="text-xs text-gray-600">ID: {shelf.id}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">{shelf.label}</h2>
-              <p className="text-xs text-gray-600">ID: {shelf.id}</p>
-            </div>
+            
+            {/* Analytics Toggle */}
+            <button
+              onClick={() => setShowAnalytics(!showAnalytics)}
+              className={`p-2 rounded-lg transition-colors ${
+                showAnalytics 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+              title="Toggle Analytics"
+            >
+              <BarChart3 size={20} />
+            </button>
           </div>
 
           {/* Product Info */}
@@ -101,6 +120,27 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
           </button>
         </div>
       </div>
+
+      {/* Analytics Panel - Right Side */}
+      {showAnalytics && (
+        <div className="fixed top-6 right-6 z-50 w-[450px]">
+          <div className="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-4 border-2 border-blue-500">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <BarChart3 size={20} className="text-blue-500" />
+                Analytics - {shelf.id}
+              </h3>
+              <button
+                onClick={() => setShowAnalytics(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            <ShelfAnalytics shelfId={shelf.id} />
+          </div>
+        </div>
+      )}
     </>
   );
 }

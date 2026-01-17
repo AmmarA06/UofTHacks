@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Loader2, AlertCircle, Store as StoreIcon, Info, Camera, Lock } from 'lucide-react';
+import { Upload, Loader2, AlertCircle, Store as StoreIcon, Info, Camera, Lock, BarChart3 } from 'lucide-react';
 import { analyzeFloorPlan } from '../services/geminiService';
 import StoreScene from '../components/StoreScene';
 import ShelfManagementUI from '../components/ShelfManagementUI';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
 
 function Store() {
   const [shelves, setShelves] = useState([]);
@@ -12,6 +13,7 @@ function Store() {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [selectedShelfId, setSelectedShelfId] = useState(null);
   const [isFreeCam, setIsFreeCam] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const cameraControlsRef = useRef();
 
   // Get current shelf data from shelves array (always up-to-date)
@@ -283,6 +285,11 @@ function Store() {
               onUpdateProductType={handleUpdateProductType}
               onClose={handleBackToOverview}
             />
+
+            {/* Analytics Dashboard - appears when analytics button clicked */}
+            {showAnalytics && !selectedShelfId && (
+              <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />
+            )}
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -297,6 +304,17 @@ function Store() {
         {/* Legend & Controls */}
         {shelves.length > 0 && !selectedShelfId && (
           <div className="absolute bottom-6 left-6 space-y-3">
+            {/* Analytics Dashboard Button */}
+            <button
+              onClick={() => setShowAnalytics(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-xl
+                font-semibold transition-all transform hover:scale-105
+                bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white"
+            >
+              <BarChart3 size={20} />
+              <span>View Analytics</span>
+            </button>
+
             {/* FreeCam Toggle Button */}
             <button
               onClick={toggleFreeCam}
