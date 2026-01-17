@@ -2,6 +2,7 @@
 
 import numpy as np
 import cv2
+import math
 from pykinect2 import PyKinectV2
 from pykinect2 import PyKinectRuntime
 
@@ -45,15 +46,63 @@ class KinectCamera:
 
         return rgb_frame, depth_frame
 
-    def pixel_to_3d(self, pixel_x, pixel_y, depth_mm):
+    def pixel_to_3d(self, pixel_x, pixel_y, depth_mm, pan_angle=None):
+        """
+        Convert pixel coordinates + depth to 3D coordinates
+
+        Args:
+            pixel_x, pixel_y: Pixel coordinates in depth frame
+            depth_mm: Depth value in millimeters
+            pan_angle: Optional pan servo angle (0, 90, 180) for world coordinate transformation
+                       If None, returns camera-relative coordinates
+                       If provided, returns world coordinates (with 90° as forward)
+
+        Returns:
+            (x, y, z): 3D coordinates in mm
+                       If pan_angle=None: camera-relative coords
+                       If pan_angle provided: world coords with 90° = forward (+Z)
+        """
         if depth_mm == 0:
             return (0, 0, 0)
 
-        z = float(depth_mm)
-        x = (pixel_x - self.cx) * z / self.fx
-        y = (pixel_y - self.cy) * z / self.fy
+        # Camera-relative coordinates (standard pinhole projection)
+        z_cam = float(depth_mm)
+        x_cam = (pixel_x - self.cx) * z_cam / self.fx
+        y_cam = (pixel_y - self.cy) * z_cam / self.fy
 
-        return (x, y, z)
+        # If no pan angle, return camera-relative coords
+        if pan_angle is None:
+            return (x_cam, y_cam, z_cam)
+
+        # Transform to world coordinates based on pan angle
+        return self.camera_to_world_coords(x_cam, y_cam, z_cam, pan_angle)
+
+    def camera_to_world_coords(self, x_cam, y_cam, z_cam, pan_angle):
+        """
+        Transform camera-relative coordinates to world coordinates
+
+        World coordinate system:
+            - 90° pan angle = forward (+Z direction) [camera home position]
+            - 0° pan angle = left (-X direction)
+            - 180° pan angle = right (+X direction)
+            - Y axis = vertical (unchanged)
+
+        Args:
+            x_cam, y_cam, z_cam: Camera-relative coordinates (mm)
+            pan_angle: Current pan servo angle (0, 90, or 180 degrees)
+
+        Returns:
+            (x_world, y_world, z_world): World coordinates in mm
+        """
+        # Calculate rotation angle from reference (90° = 0 offset)
+        theta = math.radians(pan_angle - 90)
+
+        # Rotate in XZ plane (horizontal), Y unchanged (vertical)
+        x_world = x_cam * math.cos(theta) - z_cam * math.sin(theta)
+        y_world = y_cam  # Vertical axis stays the same
+        z_world = x_cam * math.sin(theta) + z_cam * math.cos(theta)
+
+        return (x_world, y_world, z_world)
 
     def map_color_to_depth(self, color_x, color_y):
         depth_x = int(color_x * self.depth_width / self.color_width)
