@@ -6,7 +6,6 @@ import { PageTransition, fadeInUp } from '@/components/common/PageTransition';
 import { MetricCard } from '@/components/common/MetricCard';
 import { formatTimeAgo } from '@/utils/formatters';
 import { getClassColor } from '@/utils/colors';
-import { Eye } from 'lucide-react';
 
 export function Dashboard() {
     const { stats, loading: statsLoading } = useStats();
@@ -14,14 +13,12 @@ export function Dashboard() {
 
     return (
         <PageTransition>
-            <div className="space-y-8 py-8">
+            <div className="space-y-8 py-4">
                 {/* Header Section */}
-                <motion.div
-                    variants={fadeInUp}
-                >
-                    <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Overview</h1>
-                    <p className="mt-2 text-lg text-foreground-muted">
-                        Real-time insights and detection analytics.
+                <motion.div variants={fadeInUp}>
+                    <h1 className="text-[32px] md:text-[40px] font-normal tracking-[-0.02em] text-[#1a1a1a]">Overview</h1>
+                    <p className="mt-2 text-[16px] text-gray-500">
+                        Real-time inventory tracking and detection analytics.
                     </p>
                 </motion.div>
 
@@ -30,19 +27,19 @@ export function Dashboard() {
                     <MetricCard
                         title="Total Objects"
                         value={stats?.total_objects || 0}
-                        subtext="Stored assets"
+                        subtext="Tracked items"
                         trend="up"
                     />
                     <MetricCard
                         title="Present Objects"
                         value={stats?.present_objects || 0}
-                        subtext="Live detection"
+                        subtext="In view"
                         trend="up"
                     />
                     <MetricCard
                         title="Total Detections"
                         value={stats?.total_detections || 0}
-                        subtext="Cumulative events"
+                        subtext="Events logged"
                         trend="up"
                     />
                     <MetricCard
@@ -54,49 +51,55 @@ export function Dashboard() {
                 </div>
 
                 {/* Charts Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-gradient-to-br from-background-elevated to-background-card rounded-lg border border-border shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-border bg-gradient-to-r from-background-subtle to-background-accent">
-                            <h3 className="text-lg font-semibold text-foreground">Class Distribution</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 bg-[#f3f3f3] rounded-2xl overflow-hidden">
+                        <div className="p-6 border-b border-gray-200/50">
+                            <h3 className="text-[18px] font-medium text-[#1a1a1a] tracking-[-0.01em]">Class Distribution</h3>
                         </div>
-                        <div className="p-0 bg-background-elevated">
+                        <div className="p-0 bg-white">
                             <ClassChart classDistribution={stats?.class_distribution} />
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-background-elevated to-background-card rounded-lg border border-border shadow-sm p-6 relative overflow-hidden">
-                        {/* Decorative gradient */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-light/20 to-transparent rounded-bl-full"></div>
-                        
-                        <h3 className="text-lg font-semibold text-foreground mb-4 relative z-10 flex items-center gap-2">
-                            <Eye size={20} className="text-blue-500" />
+                    <div className="bg-[#f3f3f3] rounded-2xl p-6">
+                        <h3 className="text-[18px] font-medium text-[#1a1a1a] tracking-[-0.01em] mb-5 flex items-center gap-2">
+                            <div className="grid grid-cols-3 gap-0.5 w-5 h-5">
+                                <div></div>
+                                <div className="w-1.5 h-1.5 bg-[#1a1a1a] rounded-full"></div>
+                                <div></div>
+                                <div className="w-1.5 h-1.5 bg-[#1a1a1a] rounded-full"></div>
+                                <div className="w-1.5 h-1.5 bg-[#1a1a1a] rounded-full"></div>
+                                <div className="w-1.5 h-1.5 bg-[#1a1a1a] rounded-full"></div>
+                                <div></div>
+                                <div className="w-1.5 h-1.5 bg-[#1a1a1a] rounded-full"></div>
+                                <div></div>
+                            </div>
                             Recent Activity
                         </h3>
-                        
-                        <div className="space-y-3 relative z-10">
+                        <div className="space-y-4">
                             {detectionsLoading ? (
                                 <div className="flex items-center justify-center py-8">
-                                    <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                                    <div className="animate-spin w-6 h-6 border-2 border-[#1a1a1a] border-t-transparent rounded-full"></div>
                                 </div>
                             ) : detections && detections.length > 0 ? (
                                 detections.map((detection) => {
                                     const classColor = getClassColor(detection.class_name);
                                     return (
-                                        <div key={detection.detection_id} className="flex items-start gap-3 pb-3 border-b border-border-light last:border-0 last:pb-0">
-                                            <div 
-                                                className="w-2 h-2 rounded-full mt-2 shadow-sm flex-shrink-0" 
+                                        <div key={detection.detection_id} className="flex items-start gap-3 pb-4 border-b border-gray-200/50 last:border-0 last:pb-0">
+                                            <div
+                                                className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
                                                 style={{ backgroundColor: classColor }}
                                             ></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-foreground truncate">
+                                                <p className="text-[14px] font-medium text-[#1a1a1a] truncate">
                                                     <span className="capitalize">{detection.class_name}</span> detected
                                                 </p>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <p className="text-xs text-foreground-muted">
+                                                    <p className="text-[12px] text-gray-500">
                                                         {formatTimeAgo(detection.timestamp)}
                                                     </p>
                                                     {detection.confidence && (
-                                                        <span className="text-xs text-gray-400">
+                                                        <span className="text-[12px] text-gray-400">
                                                             • {(detection.confidence * 100).toFixed(0)}%
                                                         </span>
                                                     )}
@@ -107,8 +110,8 @@ export function Dashboard() {
                                 })
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                                    <Eye size={24} className="opacity-20 mb-2" />
-                                    <p className="text-xs">No recent activity</p>
+                                    <div className="w-3 h-3 bg-gray-300 rounded-full mb-2"></div>
+                                    <p className="text-[12px]">No recent activity</p>
                                 </div>
                             )}
                         </div>
