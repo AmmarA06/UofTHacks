@@ -24,7 +24,7 @@ class GroundingDinoSystem:
 
     def __init__(self, detection_classes, endpoint=None, api_host="127.0.0.1", api_port=8000,
                  pan_tilt_port=None, ema_alpha=0.25,
-                 confidence=0.40, resize_width=1920, jpeg_quality=100,
+                 confidence=0.60, resize_width=1920, jpeg_quality=100,
                  movement_threshold=10.0):
         print("=" * 70)
         print("VISUAL DATABASE - GROUNDING DINO + DATABASE + API SERVER")
@@ -733,8 +733,8 @@ Examples:
     # Detection classes
     parser.add_argument('--classes', nargs='+', default=None,
                         help='Classes to detect (default: load from database)')
-    parser.add_argument('--confidence', type=float, default=0.40,
-                        help='Detection confidence threshold (default: 0.40)')
+    parser.add_argument('--confidence', type=float, default=0.60,
+                        help='Detection confidence threshold (default: 0.60)')
     parser.add_argument('--endpoint', default=None,
                         help='RunPod endpoint URL (default: from detector)')
 
