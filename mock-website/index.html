@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShelfSense Store | Smart Retail Experience</title>
     <!-- Replace AMPLITUDE_API_KEY with your actual API key -->
-    <script type="text/javascript"
-        src="https://cdn.amplitude.com/script/AMPLITUDE_API_KEY.experiment.js"></script>
+    <script type="text/javascript" src="https://cdn.amplitude.com/script/AMPLITUDE_API_KEY.experiment.js"></script>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -728,16 +727,21 @@
         <!-- Dynamic toasts appear here -->
     </div>
 
+    <!-- Amplitude Configuration (gitignored) -->
+    <script src="config.js"></script>
+
     <!-- Amplitude Browser SDK -->
     <script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
     <script>
-        // Initialize Amplitude with your API key
-        // This matches your .env VITE_AMPLITUDE_API_KEY
-        // Replace with your actual Amplitude API key
-        const AMPLITUDE_API_KEY = 'AMPLITUDE_API_KEY';
+        // Initialize Amplitude with API key from config.js
+        const AMPLITUDE_API_KEY = window.AMPLITUDE_CONFIG?.apiKey || 'MISSING_API_KEY';
+
+        if (AMPLITUDE_API_KEY === 'MISSING_API_KEY' || AMPLITUDE_API_KEY === 'YOUR_ACTUAL_API_KEY_HERE') {
+            console.error('[Amplitude] ⚠️ API key not configured! Copy config.example.js to config.js and add your key.');
+        }
 
         window.amplitude.init(AMPLITUDE_API_KEY, {
-            serverZone: 'US',
+            serverZone: window.AMPLITUDE_CONFIG?.serverZone || 'US',
             flushIntervalMillis: 1000,
             flushQueueSize: 1,
             defaultTracking: {
@@ -756,7 +760,7 @@
         // Initialize centralized Amplitude client
         import { AmplitudeClient } from '../amplitude-integration/browser/amplitude-client.js';
         import '../amplitude-integration/browser/hooks/ecommerce-hooks.js';
-        
+
         // Initialize with API key from environment or hardcoded
         AmplitudeClient.init({
             apiKey: AMPLITUDE_API_KEY, // Uses the key from above
