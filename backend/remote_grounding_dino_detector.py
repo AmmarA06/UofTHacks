@@ -67,7 +67,7 @@ class RemoteGroundingDinoDetector:
             self.text_prompt = ". ".join(new_classes)
         print(f"✓ Updated classes: {self.text_prompt}")
 
-    def detect_with_depth(self, rgb_frame, depth_frame, kinect):
+    def detect_with_depth(self, rgb_frame, depth_frame, kinect, pan_angle=None):
         """
         Main detection method - compatible with backend.py
         Non-blocking: sends frame to GPU async, returns cached results immediately.
@@ -76,6 +76,9 @@ class RemoteGroundingDinoDetector:
             rgb_frame: RGB frame from Kinect (H, W, 3)
             depth_frame: Depth frame from Kinect (H, W) in mm
             kinect: KinectCamera instance for 3D calculations
+            pan_angle: Optional pan servo angle (0, 90, 180) for world coordinate transformation
+                       If None, returns camera-relative coordinates
+                       If provided, returns world coordinates (with 90° as forward)
 
         Returns:
             Tuple of (detections, is_new) where:
@@ -110,8 +113,8 @@ class RemoteGroundingDinoDetector:
                 depth_mm = depth_frame[depth_y, depth_x]
 
                 if depth_mm > 0:
-                    # Convert to 3D world coordinates
-                    center_3d = kinect.pixel_to_3d(depth_x, depth_y, depth_mm)
+                    # Convert to 3D world coordinates (with pan_angle transform)
+                    center_3d = kinect.pixel_to_3d(depth_x, depth_y, depth_mm, pan_angle=pan_angle)
                     det['center_3d'] = center_3d
                 else:
                     det['center_3d'] = None
