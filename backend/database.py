@@ -176,6 +176,23 @@ class VisualDatabase:
             )
         """)
 
+        # Behavioral Events table for tracking WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS behavioral_events (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                object_id INTEGER,
+                class_name TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                view_angle INTEGER,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                metadata TEXT,
+                FOREIGN KEY (object_id) REFERENCES objects(object_id) ON DELETE SET NULL
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_behavioral_event_type ON behavioral_events(event_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_behavioral_timestamp ON behavioral_events(timestamp)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_behavioral_object ON behavioral_events(object_id)")
+
         # Indexes for object_groups tables
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_group_name ON object_groups(group_name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_group_members_group ON object_group_members(group_id)")
@@ -746,6 +763,141 @@ class VisualDatabase:
             'ever_moved_count': ever_moved_count,
             'behavioral_states': state_counts
         }
+
+    # === BEHAVIORAL EVENTS METHODS ===
+
+    def record_behavioral_event(self, object_id: int, class_name: str, event_type: str,
+                                view_angle: int = None, metadata: Dict = None) -> int:
+        """
+        Record a behavioral event (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED, MOVED).
+
+        Args:
+            object_id: Database object ID
+            class_name: Object class name
+            event_type: Event type (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED, MOVED)
+            view_angle: Camera view angle (optional)
+            metadata: Additional event metadata as dict (optional)
+
+        Returns:
+            event_id of the created event
+        """
+        cursor = self.conn.cursor()
+        now = datetime.now().isoformat()
+
+        metadata_json = json.dumps(metadata) if metadata else None
+
+        cursor.execute("""
+            INSERT INTO behavioral_events (object_id, class_name, event_type, view_angle, timestamp, metadata)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (object_id, class_name, event_type, view_angle, now, metadata_json))
+
+        event_id = cursor.lastrowid
+        self.conn.commit()
+
+        return event_id
+
+    def get_behavioral_events(self, limit: int = 100, event_type: str = None,
+                              object_id: int = None, since: str = None) -> List[Dict]:
+        """
+        Get behavioral events with optional filters.
+
+        Args:
+            limit: Maximum number of events to return (default 100)
+            event_type: Filter by event type (optional)
+            object_id: Filter by object ID (optional)
+            since: Filter events after this ISO timestamp (optional)
+
+        Returns:
+            List of event dictionaries
+        """
+        cursor = self.conn.cursor()
+
+        query = "SELECT * FROM behavioral_events WHERE 1=1"
+        params = []
+
+        if event_type:
+            query += " AND event_type = ?"
+            params.append(event_type)
+
+        if object_id:
+            query += " AND object_id = ?"
+            params.append(object_id)
+
+        if since:
+            query += " AND timestamp > ?"
+            params.append(since)
+
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+
+        events = []
+        for row in rows:
+            event = dict(row)
+            # Parse metadata JSON if present
+            if event.get('metadata'):
+                try:
+                    event['metadata'] = json.loads(event['metadata'])
+                except:
+                    pass
+            events.append(event)
+
+        return events
+
+    def get_behavioral_event_stats(self) -> Dict:
+        """Get statistics about behavioral events."""
+        cursor = self.conn.cursor()
+
+        # Count by event type
+        cursor.execute("""
+            SELECT event_type, COUNT(*) as count
+            FROM behavioral_events
+            GROUP BY event_type
+        """)
+        event_counts = {row['event_type']: row['count'] for row in cursor.fetchall()}
+
+        # Total events
+        cursor.execute("SELECT COUNT(*) as count FROM behavioral_events")
+        total = cursor.fetchone()['count']
+
+        # Events in last hour
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM behavioral_events
+            WHERE timestamp > datetime('now', '-1 hour')
+        """)
+        last_hour = cursor.fetchone()['count']
+
+        # Events today
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM behavioral_events
+            WHERE timestamp > datetime('now', 'start of day')
+        """)
+        today = cursor.fetchone()['count']
+
+        return {
+            'total_events': total,
+            'events_last_hour': last_hour,
+            'events_today': today,
+            'by_type': event_counts
+        }
+
+    def clear_behavioral_events(self, before: str = None):
+        """
+        Clear behavioral events.
+
+        Args:
+            before: Clear events before this ISO timestamp. If None, clears all.
+        """
+        cursor = self.conn.cursor()
+
+        if before:
+            cursor.execute("DELETE FROM behavioral_events WHERE timestamp < ?", (before,))
+        else:
+            cursor.execute("DELETE FROM behavioral_events")
+
+        self.conn.commit()
 
     # === CLASS MANAGEMENT METHODS ===
 

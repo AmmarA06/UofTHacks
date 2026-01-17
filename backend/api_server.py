@@ -739,6 +739,81 @@ async def delete_group(group_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# === BEHAVIORAL EVENTS ENDPOINTS ===
+
+@app.get("/api/events")
+async def get_behavioral_events(
+    limit: int = 100,
+    event_type: Optional[str] = None,
+    object_id: Optional[int] = None,
+    since: Optional[str] = None
+):
+    """
+    Get behavioral events (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED, MOVED).
+
+    Query parameters:
+    - limit: Max events to return (default 100)
+    - event_type: Filter by type (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED, MOVED)
+    - object_id: Filter by object ID
+    - since: Filter events after this ISO timestamp
+    """
+    try:
+        events = db.get_behavioral_events(
+            limit=limit,
+            event_type=event_type,
+            object_id=object_id,
+            since=since
+        )
+        return events
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events/stats")
+async def get_behavioral_event_stats():
+    """Get statistics about behavioral events."""
+    try:
+        stats = db.get_behavioral_event_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/events/stream")
+async def get_event_stream(since: Optional[str] = None):
+    """
+    Get new events since last check (for polling).
+
+    Use the 'since' parameter with the timestamp of the last event you received.
+    Returns events newer than that timestamp.
+    """
+    try:
+        events = db.get_behavioral_events(limit=50, since=since)
+        latest_timestamp = events[0]['timestamp'] if events else since
+        return {
+            "events": events,
+            "latest_timestamp": latest_timestamp,
+            "count": len(events)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/events")
+async def clear_behavioral_events(before: Optional[str] = None):
+    """
+    Clear behavioral events.
+
+    Query parameters:
+    - before: Clear events before this ISO timestamp. If not provided, clears all.
+    """
+    try:
+        db.clear_behavioral_events(before=before)
+        return {"status": "success", "message": "Events cleared"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # === HELPER FUNCTIONS FOR INTEGRATION ===
 
 def run_server(host: str = "127.0.0.1", port: int = 8000):

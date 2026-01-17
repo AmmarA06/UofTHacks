@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { ObjectBrowser } from './pages/ObjectBrowser';
 import { SpatialView } from './pages/SpatialView';
 import { ClassManager } from './pages/ClassManager';
+import { EventTimeline } from './pages/EventTimeline';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -15,6 +16,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/objects" element={<ObjectBrowser />} />
         <Route path="/spatial" element={<SpatialView />} />
+        <Route path="/events" element={<EventTimeline />} />
       </Routes>
     </AnimatePresence>
   );
@@ -29,6 +31,7 @@ function App() {
           <Route path="/objects" element={<ObjectBrowser />} />
           <Route path="/classes" element={<ClassManager />} />
           <Route path="/spatial" element={<SpatialView />} />
+          <Route path="/events" element={<EventTimeline />} />
         </Routes>
       </Layout>
     </Router>

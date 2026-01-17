@@ -276,9 +276,25 @@ class GroundingDinoSystem:
         for event in behavioral_events:
             event_type = event.get('type')
             obj_id = event.get('object_id')
+            class_name = event.get('class_name', 'unknown')
+            view_angle = event.get('view_angle')
+
             if obj_id and event_type:
+                # Update object state
                 self.db.set_behavioral_state(obj_id, event_type)
-                print(f"  [Behavioral] {event.get('class_name')} -> {event_type}")
+
+                # Record event in timeline
+                metadata = {k: v for k, v in event.items()
+                           if k not in ('type', 'object_id', 'class_name', 'view_angle')}
+                self.db.record_behavioral_event(
+                    object_id=obj_id,
+                    class_name=class_name,
+                    event_type=event_type,
+                    view_angle=view_angle,
+                    metadata=metadata if metadata else None
+                )
+
+                print(f"  [Behavioral] {class_name} -> {event_type}")
 
         # Cache results for when GPU is busy
         self.last_detections = detections
