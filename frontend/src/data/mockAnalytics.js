@@ -1,6 +1,7 @@
 // Mock Analytics Data Generator for Store Products
+// Based on Events: PRODUCT_PURCHASED, PRODUCT_WINDOW_SHOPPED, PRODUCT_ABANDONED
 
-// Generate time series data for the last 30 days
+// Generate time series data for the last 30 days based on events
 const generateTimeSeriesData = (productType, shelfId = null) => {
   const data = [];
   const baseValue = productType === 'cell_phone' ? 45 : 38;
@@ -17,18 +18,25 @@ const generateTimeSeriesData = (productType, shelfId = null) => {
     // Trend (increasing over time)
     const trendMultiplier = 1 + (29 - i) * 0.01;
     
-    const views = Math.floor(
+    // Event: PRODUCT_WINDOW_SHOPPED (browsing/viewing)
+    const windowShopped = Math.floor(
       (baseValue + Math.random() * variance) * weekendMultiplier * trendMultiplier
     );
-    const addToCart = Math.floor(views * (0.15 + Math.random() * 0.1));
-    const purchases = Math.floor(addToCart * (0.6 + Math.random() * 0.2));
+    
+    // Event: PRODUCT_ABANDONED (window shopped but left without purchasing)
+    const abandoned = Math.floor(windowShopped * (0.6 + Math.random() * 0.15));
+    
+    // Event: PRODUCT_PURCHASED (converted from window shopping)
+    const purchased = Math.floor((windowShopped - abandoned) * (0.4 + Math.random() * 0.3));
     
     data.push({
       date: date.toISOString().split('T')[0],
-      views,
-      addToCart,
-      purchases,
-      revenue: purchases * (productType === 'cell_phone' ? 699 : 2.99)
+      windowShopped,
+      abandoned,
+      purchased,
+      revenue: purchased * (productType === 'cell_phone' ? 699 : 2.99),
+      conversionRate: ((purchased / windowShopped) * 100).toFixed(2),
+      abandonmentRate: ((abandoned / windowShopped) * 100).toFixed(2)
     });
   }
   
@@ -60,22 +68,27 @@ const generateCohortData = (productType) => {
   return cohorts;
 };
 
-// Generate funnel data
+// Generate funnel data based on events
 const generateFunnelData = (productType, shelfId = null) => {
   const baseMultiplier = shelfId ? 0.3 : 1.0;
   
-  const views = Math.floor((1200 + Math.random() * 300) * baseMultiplier);
-  const productViews = Math.floor(views * (0.4 + Math.random() * 0.1));
-  const addToCart = Math.floor(productViews * (0.25 + Math.random() * 0.1));
-  const checkout = Math.floor(addToCart * (0.8 + Math.random() * 0.1));
-  const purchase = Math.floor(checkout * (0.65 + Math.random() * 0.15));
+  // PRODUCT_WINDOW_SHOPPED event
+  const windowShopped = Math.floor((1200 + Math.random() * 300) * baseMultiplier);
+  
+  // PRODUCT_ABANDONED event
+  const abandoned = Math.floor(windowShopped * (0.55 + Math.random() * 0.15));
+  
+  // Continued shopping (didn't abandon yet)
+  const continued = windowShopped - abandoned;
+  
+  // PRODUCT_PURCHASED event
+  const purchased = Math.floor(continued * (0.6 + Math.random() * 0.2));
   
   return [
-    { stage: 'Views', count: views, percentage: 100 },
-    { stage: 'Product Views', count: productViews, percentage: ((productViews / views) * 100).toFixed(1) },
-    { stage: 'Add to Cart', count: addToCart, percentage: ((addToCart / views) * 100).toFixed(1) },
-    { stage: 'Checkout', count: checkout, percentage: ((checkout / views) * 100).toFixed(1) },
-    { stage: 'Purchase', count: purchase, percentage: ((purchase / views) * 100).toFixed(1) }
+    { stage: 'Window Shopped', count: windowShopped, percentage: 100, event: 'PRODUCT_WINDOW_SHOPPED' },
+    { stage: 'Abandoned', count: abandoned, percentage: ((abandoned / windowShopped) * 100).toFixed(1), event: 'PRODUCT_ABANDONED' },
+    { stage: 'Continued', count: continued, percentage: ((continued / windowShopped) * 100).toFixed(1), event: null },
+    { stage: 'Purchased', count: purchased, percentage: ((purchased / windowShopped) * 100).toFixed(1), event: 'PRODUCT_PURCHASED' }
   ];
 };
 
@@ -203,6 +216,116 @@ const generateCustomerSegments = (productType) => {
   return segments;
 };
 
+// Generate customer journey flow data (for Sankey/flow chart)
+const generateCustomerFlow = (productType) => {
+  const baseWindowShop = 1000;
+  const windowShopped = baseWindowShop + Math.floor(Math.random() * 200);
+  
+  // High abandonment suggests pricing or value issues
+  const abandonmentRate = productType === 'cell_phone' ? 0.55 : 0.65; // Higher for water bottles
+  const abandoned = Math.floor(windowShopped * abandonmentRate);
+  const continued = windowShopped - abandoned;
+  
+  const purchased = Math.floor(continued * 0.7);
+  const abandonedLater = continued - purchased;
+  
+  return {
+    nodes: [
+      { id: 'window_shop', label: 'Window Shopped', value: windowShopped },
+      { id: 'abandoned_early', label: 'Abandoned Early', value: abandoned },
+      { id: 'continued', label: 'Continued Browsing', value: continued },
+      { id: 'purchased', label: 'Purchased', value: purchased },
+      { id: 'abandoned_late', label: 'Abandoned Late', value: abandonedLater }
+    ],
+    links: [
+      { source: 'window_shop', target: 'abandoned_early', value: abandoned, label: 'PRODUCT_ABANDONED' },
+      { source: 'window_shop', target: 'continued', value: continued },
+      { source: 'continued', target: 'purchased', value: purchased, label: 'PRODUCT_PURCHASED' },
+      { source: 'continued', target: 'abandoned_late', value: abandonedLater, label: 'PRODUCT_ABANDONED' }
+    ],
+    insights: generateFlowInsights(abandonmentRate, purchased, windowShopped, productType)
+  };
+};
+
+// Generate actionable insights based on flow data
+const generateFlowInsights = (abandonmentRate, purchased, windowShopped, productType) => {
+  const insights = [];
+  const conversionRate = (purchased / windowShopped) * 100;
+  
+  // High abandonment rate insights
+  if (abandonmentRate > 0.6) {
+    insights.push({
+      type: 'critical',
+      title: 'High Abandonment Rate',
+      message: `${(abandonmentRate * 100).toFixed(0)}% of window shoppers abandon without purchasing`,
+      recommendations: [
+        'Consider reducing price by 10-15%',
+        'Add promotional offers or bundles',
+        'Improve product descriptions and images',
+        'Offer limited-time discounts'
+      ]
+    });
+  }
+  
+  if (abandonmentRate > 0.5 && abandonmentRate <= 0.6) {
+    insights.push({
+      type: 'warning',
+      title: 'Moderate Abandonment',
+      message: `${(abandonmentRate * 100).toFixed(0)}% abandonment suggests some friction in purchase decision`,
+      recommendations: [
+        'A/B test pricing strategies',
+        'Add customer reviews and social proof',
+        'Highlight value propositions',
+        'Consider "Buy Now, Pay Later" options'
+      ]
+    });
+  }
+  
+  // Low conversion insights
+  if (conversionRate < 20) {
+    insights.push({
+      type: 'warning',
+      title: 'Low Conversion Rate',
+      message: `Only ${conversionRate.toFixed(1)}% of window shoppers complete purchase`,
+      recommendations: [
+        'Simplify checkout process',
+        'Reduce barriers to purchase',
+        'Add urgency indicators (limited stock)',
+        'Offer free shipping or returns'
+      ]
+    });
+  }
+  
+  // Product-specific insights
+  if (productType === 'cell_phone') {
+    insights.push({
+      type: 'info',
+      title: 'High-Value Product',
+      message: 'Cell phones require more consideration before purchase',
+      recommendations: [
+        'Provide detailed specifications',
+        'Offer comparison tools',
+        'Add financing options',
+        'Highlight warranty and support'
+      ]
+    });
+  } else {
+    insights.push({
+      type: 'info',
+      title: 'Impulse Purchase Item',
+      message: 'Water bottles are typically impulse buys - high abandonment suggests opportunity',
+      recommendations: [
+        'Lower price point for quick decisions',
+        'Place near checkout areas',
+        'Bundle with other products',
+        'Emphasize immediate utility'
+      ]
+    });
+  }
+  
+  return insights;
+};
+
 // Main export object
 export const mockAnalytics = {
   // Time series data
@@ -232,19 +355,25 @@ export const mockAnalytics = {
   // Customer segments
   getCustomerSegments: (productType) => generateCustomerSegments(productType),
   
+  // Customer journey flow
+  getCustomerFlow: (productType) => generateCustomerFlow(productType),
+  
   // Summary stats
   getSummaryStats: (productType, shelves = null) => {
     const timeSeriesData = generateTimeSeriesData(productType);
-    const totalViews = timeSeriesData.reduce((sum, d) => sum + d.views, 0);
-    const totalPurchases = timeSeriesData.reduce((sum, d) => sum + d.purchases, 0);
+    const totalWindowShopped = timeSeriesData.reduce((sum, d) => sum + d.windowShopped, 0);
+    const totalAbandoned = timeSeriesData.reduce((sum, d) => sum + d.abandoned, 0);
+    const totalPurchased = timeSeriesData.reduce((sum, d) => sum + d.purchased, 0);
     const totalRevenue = timeSeriesData.reduce((sum, d) => sum + d.revenue, 0);
     
     return {
-      totalViews,
-      totalPurchases,
+      totalWindowShopped,
+      totalAbandoned,
+      totalPurchased,
       totalRevenue,
-      conversionRate: ((totalPurchases / totalViews) * 100).toFixed(2),
-      averageOrderValue: (totalRevenue / totalPurchases).toFixed(2),
+      conversionRate: ((totalPurchased / totalWindowShopped) * 100).toFixed(2),
+      abandonmentRate: ((totalAbandoned / totalWindowShopped) * 100).toFixed(2),
+      averageOrderValue: (totalRevenue / totalPurchased).toFixed(2),
       growth: (12.5 + Math.random() * 10).toFixed(1)
     };
   }

@@ -1,7 +1,7 @@
 import { TrendingDown } from 'lucide-react';
 
-export function FunnelChart({ data, title = "Conversion Funnel" }) {
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+export function FunnelChart({ data, title = "Event-Based Conversion Funnel" }) {
+  const colors = ['#3b82f6', '#ef4444', '#10b981', '#8b5cf6'];
   
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -9,8 +9,21 @@ export function FunnelChart({ data, title = "Conversion Funnel" }) {
         <h3 className="text-lg font-bold text-gray-800">{title}</h3>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <TrendingDown size={16} />
-          <span>Overall Conversion: {data[data.length - 1]?.percentage}%</span>
+          <span>Purchase Rate: {data.find(d => d.stage === 'Purchased')?.percentage}%</span>
         </div>
+      </div>
+      
+      {/* Event Badge */}
+      <div className="mb-4 flex gap-2 flex-wrap text-xs">
+        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+          PRODUCT_WINDOW_SHOPPED
+        </span>
+        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">
+          PRODUCT_ABANDONED
+        </span>
+        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
+          PRODUCT_PURCHASED
+        </span>
       </div>
       
       {/* Visual Funnel */}

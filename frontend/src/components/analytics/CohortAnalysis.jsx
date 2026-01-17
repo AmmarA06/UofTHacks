@@ -1,6 +1,7 @@
 import { Users } from 'lucide-react';
+import { CustomerFlowChart } from './CustomerFlowChart';
 
-export function CohortAnalysis({ data, title = "Cohort Retention Analysis" }) {
+export function CohortAnalysis({ data, flowData, title = "Cohort Retention & Customer Journey" }) {
   const getColorForValue = (value) => {
     if (value === null) return 'bg-gray-100';
     if (value >= 70) return 'bg-green-500';
@@ -95,6 +96,7 @@ export function CohortAnalysis({ data, title = "Cohort Retention Analysis" }) {
           <li>• Newest cohort showing {data[data.length - 1].month0.toFixed(0)}% engagement</li>
           <li>• {data.filter(c => c.month1 && c.month1 > 50).length} cohorts with strong retention</li>
         </ul>
+      </div>
       </div>
     </div>
   );

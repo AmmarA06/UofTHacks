@@ -78,7 +78,7 @@ export function OverviewAnalytics({ shelves, onClose }) {
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
                   <div className="text-sm opacity-90 mb-2">Total Revenue</div>
                   <div className="text-3xl font-bold">${totalRevenue.toLocaleString()}</div>
-                  <div className="text-xs opacity-80 mt-2">↑ 12.5% vs last month</div>
+                  <div className="text-xs opacity-80 mt-2">From PRODUCT_PURCHASED events</div>
                 </div>
                 
                 <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
