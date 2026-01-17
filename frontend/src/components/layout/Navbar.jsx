@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Database, Home, Box, Boxes, Tags, Activity } from 'lucide-react';
+import { Database, Home, Box, Boxes, Tags, Activity, Store } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export function Navbar() {
@@ -11,6 +11,7 @@ export function Navbar() {
         { path: '/classes', label: 'Classes', icon: Tags },
         { path: '/events', label: 'Events', icon: Activity },
         { path: '/spatial', label: 'Spatial View', icon: Boxes },
+        { path: '/store', label: 'Store', icon: Store },
     ];
 
     return (
