@@ -109,6 +109,9 @@ class GroundingDinoSystem:
         print(f"  - Objects timeout after 7 seconds if not seen")
         print(f"  - Thumbnail updates: 10s interval OR +0.15 confidence boost")
         print(f"  - Use 'v' key to see tracking status")
+        print(f"\nWORLD COORDINATE SYSTEM:")
+        print(f"  - 90° pan = forward (+Z), 0° = left (-X), 180° = right (+X)")
+        print(f"  - All coordinates transformed to world space (same object = same coords)")
         print("\nCONTROLS:")
         print("  'q' or ESC  - Quit")
         print("  's'         - Save screenshot")
@@ -177,7 +180,10 @@ class GroundingDinoSystem:
     def process_frame(self, rgb_frame, depth_frame):
         # Get detections from remote Grounding DINO (async, non-blocking)
         # Returns (detections, is_new) - is_new is True only when fresh GPU results arrive
-        detections, is_new_gpu_result = self.detector.detect_with_depth(rgb_frame, depth_frame, self.kinect)
+        # Pass current pan angle for world coordinate transformation
+        detections, is_new_gpu_result = self.detector.detect_with_depth(
+            rgb_frame, depth_frame, self.kinect, pan_angle=self.current_pan
+        )
 
         # Only process database when we have fresh GPU results
         if not is_new_gpu_result:
