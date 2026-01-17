@@ -121,6 +121,44 @@ class VisualDatabase:
             cursor.execute("ALTER TABLE objects ADD COLUMN class_id INTEGER REFERENCES classes(class_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_objects_class_id ON objects(class_id)")
 
+        # Add movement tracking columns (backward compatible migration)
+        cursor.execute("PRAGMA table_info(objects)")
+        columns = [row[1] for row in cursor.fetchall()]
+
+        # Home position (2D bbox center when first detected)
+        if 'home_bbox_x' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_x INTEGER")
+        if 'home_bbox_y' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_y INTEGER")
+        if 'home_bbox_w' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_w INTEGER")
+        if 'home_bbox_h' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_h INTEGER")
+
+        # Movement state
+        if 'is_moved' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN is_moved INTEGER DEFAULT 0")
+        if 'was_ever_moved' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN was_ever_moved INTEGER DEFAULT 0")
+
+        # Behavioral state (NONE, PRESENT, MOVED, WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
+        if 'behavioral_state' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN behavioral_state TEXT DEFAULT 'NONE'")
+
+        # Behavioral timestamps
+        if 'moved_time' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN moved_time TEXT")
+        if 'returned_time' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN returned_time TEXT")
+
+        # Depth quality tracking (for estimated vs real depth)
+        if 'position_quality' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN position_quality TEXT DEFAULT 'unknown'")
+        if 'awaiting_real_depth' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN awaiting_real_depth INTEGER DEFAULT 0")
+        if 'last_real_depth_time' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN last_real_depth_time TEXT")
+
 
         # Object Groups table for grouping/tagging multiple objects
         cursor.execute("""
@@ -145,6 +183,23 @@ class VisualDatabase:
                 UNIQUE(group_id, object_id)
             )
         """)
+
+        # Behavioral Events table for tracking WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS behavioral_events (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                object_id INTEGER,
+                class_name TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                view_angle INTEGER,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                metadata TEXT,
+                FOREIGN KEY (object_id) REFERENCES objects(object_id) ON DELETE SET NULL
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_behavioral_event_type ON behavioral_events(event_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_behavioral_timestamp ON behavioral_events(timestamp)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_behavioral_object ON behavioral_events(object_id)")
 
         # Indexes for object_groups tables
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_group_name ON object_groups(group_name)")
@@ -206,9 +261,10 @@ class VisualDatabase:
     def create_object(self, detection: Dict, rgb_frame: Optional[np.ndarray] = None) -> Optional[int]:
         cursor = self.conn.cursor()
 
-        # Validate center_3d - try to use it if available, otherwise use last known position
+        # ALWAYS-TRACK MODE: Accept objects even with estimated positions
         center_3d = detection.get('center_3d')
         last_known_3d = detection.get('last_known_position_3d')
+        depth_source = detection.get('depth_source', 'unknown')
         
         # Prefer current position, fallback to last known
         if center_3d is not None and all(v is not None for v in center_3d):
@@ -217,10 +273,22 @@ class VisualDatabase:
         elif last_known_3d is not None and all(v is not None for v in last_known_3d):
             x3d, y3d, z3d = last_known_3d
             position_source = "last_known"
+            depth_source = 'estimated'  # Last known is treated as estimated
         else:
-            # No position available - cannot create object yet
-            print(f"Warning: Cannot create object '{detection['class_name']}' without any valid 3D position (waiting for depth)")
-            return None
+            # No position available at all - use a default estimated position
+            # This should rarely happen now with estimation enabled
+            print(f"Warning: Creating object '{detection['class_name']}' without position - using default")
+            x3d, y3d, z3d = (0, 0, 1200)  # Default position
+            depth_source = 'estimated'
+            position_source = "default"
+
+        # Determine position quality
+        if depth_source == 'real':
+            position_quality = 'real'
+            awaiting_real_depth = 0
+        else:
+            position_quality = 'estimated'
+            awaiting_real_depth = 1  # Flag for first real depth update
 
         # Extract thumbnail if frame provided
         thumbnail = None
@@ -242,8 +310,9 @@ class VisualDatabase:
             INSERT INTO objects (
                 class_name, class_id, avg_position_x, avg_position_y, avg_position_z,
                 first_seen, last_seen, detection_count, avg_confidence,
-                thumbnail, thumbnail_updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                thumbnail, thumbnail_updated,
+                position_quality, awaiting_real_depth, last_real_depth_time
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             detection['class_name'],
             class_id,
@@ -252,7 +321,10 @@ class VisualDatabase:
             1,
             detection['confidence'],
             thumbnail,
-            now if thumbnail else None
+            now if thumbnail else None,
+            position_quality,
+            awaiting_real_depth,
+            now if depth_source == 'real' else None
         ))
 
         object_id = cursor.lastrowid
@@ -262,7 +334,9 @@ class VisualDatabase:
 
         self.conn.commit()
         
-        if position_source == "last_known":
+        if depth_source == 'estimated':
+            print(f"  ℹ Created object {object_id} with ESTIMATED position (will update when real depth available)")
+        elif position_source == "last_known":
             print(f"  ℹ Created object {object_id} using last known position (depth unavailable)")
 
         return object_id
@@ -282,6 +356,7 @@ class VisualDatabase:
         # Try to get valid 3D position (current or last known)
         center_3d = detection.get('center_3d')
         last_known_3d = detection.get('last_known_position_3d')
+        depth_source = detection.get('depth_source', 'unknown')
         
         # Determine which position to use
         if center_3d is not None and all(v is not None for v in center_3d):
@@ -290,7 +365,7 @@ class VisualDatabase:
         elif last_known_3d is not None and all(v is not None for v in last_known_3d):
             x3d, y3d, z3d = last_known_3d
             position_available = True
-            # Note: using last known position, depth temporarily unavailable
+            depth_source = 'estimated'  # Last known is treated as estimated
         else:
             # No position at all - just update last_seen and detection count
             cursor.execute("""
@@ -301,13 +376,22 @@ class VisualDatabase:
             self.conn.commit()
             return
 
-        # Update position (Exponential Moving Average for smooth tracking)
+        # Check if this is first real depth after estimated position
+        awaiting_real_depth = obj.get('awaiting_real_depth', 0)
+        is_first_real_depth = (awaiting_real_depth == 1 and depth_source == 'real')
+
+        # Update position
         count = obj['detection_count']
 
-        # Calculate new averages using EMA
-        if obj['avg_position_x'] is None:
+        if is_first_real_depth:
+            # First real position after estimation - REPLACE entirely (don't blend)
+            new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
+            print(f"  ✓ Object {object_id}: First REAL depth received, replacing estimated position")
+        elif obj['avg_position_x'] is None:
+            # First position ever
             new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
         else:
+            # Normal EMA update for smooth tracking
             new_avg_x = self.ema_alpha * x3d + (1 - self.ema_alpha) * obj['avg_position_x']
             new_avg_y = self.ema_alpha * y3d + (1 - self.ema_alpha) * obj['avg_position_y']
             new_avg_z = self.ema_alpha * z3d + (1 - self.ema_alpha) * obj['avg_position_z']
@@ -317,6 +401,17 @@ class VisualDatabase:
             new_avg_conf = detection['confidence']
         else:
             new_avg_conf = self.ema_alpha * detection['confidence'] + (1 - self.ema_alpha) * obj['avg_confidence']
+
+        # Update depth quality fields
+        now = datetime.now().isoformat()
+        if depth_source == 'real':
+            position_quality = 'real'
+            awaiting_real_depth = 0
+            last_real_depth_time = now
+        else:
+            position_quality = 'estimated'
+            awaiting_real_depth = obj.get('awaiting_real_depth', 1)
+            last_real_depth_time = obj.get('last_real_depth_time')
 
         # Update thumbnail if rgb_frame provided (used for periodic updates)
         thumbnail_update = ""
@@ -328,6 +423,35 @@ class VisualDatabase:
                 thumbnail_params = [thumbnail, datetime.now().isoformat()]
             except Exception as e:
                 print(f"Warning: Failed to update thumbnail: {e}")
+
+        # Update object
+        cursor.execute(f"""
+            UPDATE objects SET
+                avg_position_x = ?,
+                avg_position_y = ?,
+                avg_position_z = ?,
+                last_seen = ?,
+                detection_count = ?,
+                avg_confidence = ?,
+                position_quality = ?,
+                awaiting_real_depth = ?,
+                last_real_depth_time = ?
+                {thumbnail_update}
+            WHERE object_id = ?
+        """, [
+            new_avg_x, new_avg_y, new_avg_z,
+            now,
+            count + 1,
+            new_avg_conf,
+            position_quality,
+            awaiting_real_depth,
+            last_real_depth_time
+        ] + thumbnail_params + [object_id])
+
+        # Record detection event (with actual center_3d, may be None)
+        self._record_detection(object_id, detection)
+
+        self.conn.commit()
 
         # Update object
         now = datetime.now().isoformat()
@@ -546,6 +670,91 @@ class VisualDatabase:
         # Try to get valid 3D position (current or last known)
         center_3d = detection.get('center_3d')
         last_known_3d = detection.get('last_known_position_3d')
+        depth_source = detection.get('depth_source', 'unknown')
+        
+        # Determine which position to use
+        if center_3d is not None and all(v is not None for v in center_3d):
+            x3d, y3d, z3d = center_3d
+            position_available = True
+        elif last_known_3d is not None and all(v is not None for v in last_known_3d):
+            x3d, y3d, z3d = last_known_3d
+            position_available = True
+            depth_source = 'estimated'
+        else:
+            # No valid 3D position - just update last_seen and mark present
+            cursor.execute("""
+                UPDATE objects SET last_seen = ?, is_present = 1, detection_count = detection_count + 1
+                WHERE object_id = ?
+            """, (datetime.now().isoformat(), object_id))
+            self._record_detection(object_id, detection)
+            self.conn.commit()
+            return True
+
+        # Check if this is first real depth after estimated position
+        awaiting_real_depth = obj.get('awaiting_real_depth', 0)
+        is_first_real_depth = (awaiting_real_depth == 1 and depth_source == 'real')
+
+        # Update position using EMA
+        count = obj['detection_count']
+
+        if is_first_real_depth:
+            # First real position after estimation - REPLACE entirely
+            new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
+            print(f"  ✓ Object {object_id}: First REAL depth on reappear, replacing estimated position")
+        elif obj['avg_position_x'] is None:
+            new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
+        else:
+            new_avg_x = self.ema_alpha * x3d + (1 - self.ema_alpha) * obj['avg_position_x']
+            new_avg_y = self.ema_alpha * y3d + (1 - self.ema_alpha) * obj['avg_position_y']
+            new_avg_z = self.ema_alpha * z3d + (1 - self.ema_alpha) * obj['avg_position_z']
+
+        # Update confidence using EMA
+        if obj['avg_confidence'] is None:
+            new_avg_conf = detection['confidence']
+        else:
+            new_avg_conf = self.ema_alpha * detection['confidence'] + (1 - self.ema_alpha) * obj['avg_confidence']
+
+        # Update depth quality fields
+        now = datetime.now().isoformat()
+        if depth_source == 'real':
+            position_quality = 'real'
+            awaiting_real_depth = 0
+            last_real_depth_time = now
+        else:
+            position_quality = 'estimated'
+            awaiting_real_depth = obj.get('awaiting_real_depth', 1)
+            last_real_depth_time = obj.get('last_real_depth_time')
+
+        # Update object
+        cursor.execute("""
+            UPDATE objects SET
+                avg_position_x = ?,
+                avg_position_y = ?,
+                avg_position_z = ?,
+                last_seen = ?,
+                detection_count = ?,
+                avg_confidence = ?,
+                is_present = 1,
+                position_quality = ?,
+                awaiting_real_depth = ?,
+                last_real_depth_time = ?
+            WHERE object_id = ?
+        """, [
+            new_avg_x, new_avg_y, new_avg_z,
+            now,
+            count + 1,
+            new_avg_conf,
+            position_quality,
+            awaiting_real_depth,
+            last_real_depth_time,
+            object_id
+        ])
+
+        # Record detection event (with actual center_3d, may be None)
+        self._record_detection(object_id, detection)
+
+        self.conn.commit()
+        return True
         
         # Determine which position to use
         if center_3d is not None and all(v is not None for v in center_3d):
@@ -609,6 +818,273 @@ class VisualDatabase:
     def delete_object(self, object_id: int):
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM objects WHERE object_id = ?", (object_id,))
+        self.conn.commit()
+
+    # === MOVEMENT TRACKING METHODS ===
+
+    def set_home_position(self, object_id: int, bbox: Tuple[int, int, int, int]):
+        """
+        Set the home position (initial bounding box) for an object.
+        Called when object is first detected (ENTRY event).
+
+        Args:
+            object_id: Database object ID
+            bbox: Initial bounding box (x, y, w, h)
+        """
+        cursor = self.conn.cursor()
+        x, y, w, h = bbox
+        cursor.execute("""
+            UPDATE objects SET
+                home_bbox_x = ?,
+                home_bbox_y = ?,
+                home_bbox_w = ?,
+                home_bbox_h = ?,
+                behavioral_state = 'PRESENT'
+            WHERE object_id = ?
+        """, (x, y, w, h, object_id))
+        self.conn.commit()
+
+    def update_movement_state(self, object_id: int, is_moved: bool,
+                              behavioral_state: str = None):
+        """
+        Update movement state for an object.
+
+        Args:
+            object_id: Database object ID
+            is_moved: Whether the object is currently moved from home
+            behavioral_state: New behavioral state (optional)
+        """
+        cursor = self.conn.cursor()
+        now = datetime.now().isoformat()
+
+        if behavioral_state:
+            if behavioral_state == 'MOVED' and is_moved:
+                # Record moved time
+                cursor.execute("""
+                    UPDATE objects SET
+                        is_moved = 1,
+                        was_ever_moved = 1,
+                        behavioral_state = ?,
+                        moved_time = ?
+                    WHERE object_id = ?
+                """, (behavioral_state, now, object_id))
+            elif behavioral_state == 'CART_ABANDONED':
+                # Record returned time
+                cursor.execute("""
+                    UPDATE objects SET
+                        is_moved = 0,
+                        behavioral_state = ?,
+                        returned_time = ?
+                    WHERE object_id = ?
+                """, (behavioral_state, now, object_id))
+            else:
+                cursor.execute("""
+                    UPDATE objects SET
+                        is_moved = ?,
+                        behavioral_state = ?
+                    WHERE object_id = ?
+                """, (1 if is_moved else 0, behavioral_state, object_id))
+        else:
+            cursor.execute("""
+                UPDATE objects SET is_moved = ?
+                WHERE object_id = ?
+            """, (1 if is_moved else 0, object_id))
+
+        self.conn.commit()
+
+    def set_behavioral_state(self, object_id: int, state: str):
+        """
+        Set the behavioral state for an object.
+
+        Args:
+            object_id: Database object ID
+            state: Behavioral state (NONE, PRESENT, MOVED, WINDOW_SHOPPED,
+                   CART_ABANDONED, PRODUCT_PURCHASED)
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE objects SET behavioral_state = ?
+            WHERE object_id = ?
+        """, (state, object_id))
+        self.conn.commit()
+
+    def get_home_position(self, object_id: int) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Get the home position (initial bounding box) for an object.
+
+        Returns:
+            (x, y, w, h) tuple or None if not set
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT home_bbox_x, home_bbox_y, home_bbox_w, home_bbox_h
+            FROM objects WHERE object_id = ?
+        """, (object_id,))
+        row = cursor.fetchone()
+        if row and row['home_bbox_x'] is not None:
+            return (row['home_bbox_x'], row['home_bbox_y'],
+                    row['home_bbox_w'], row['home_bbox_h'])
+        return None
+
+    def get_movement_statistics(self) -> Dict:
+        """Get statistics about object movement states"""
+        cursor = self.conn.cursor()
+
+        # Count by behavioral state
+        cursor.execute("""
+            SELECT behavioral_state, COUNT(*) as count
+            FROM objects
+            GROUP BY behavioral_state
+        """)
+        state_counts = {row['behavioral_state']: row['count'] for row in cursor.fetchall()}
+
+        # Count moved objects
+        cursor.execute("SELECT COUNT(*) as count FROM objects WHERE is_moved = 1")
+        moved_count = cursor.fetchone()['count']
+
+        # Count objects that were ever moved
+        cursor.execute("SELECT COUNT(*) as count FROM objects WHERE was_ever_moved = 1")
+        ever_moved_count = cursor.fetchone()['count']
+
+        return {
+            'moved_count': moved_count,
+            'ever_moved_count': ever_moved_count,
+            'behavioral_states': state_counts
+        }
+
+    # === BEHAVIORAL EVENTS METHODS ===
+
+    def record_behavioral_event(self, object_id: int, class_name: str, event_type: str,
+                                view_angle: int = None, metadata: Dict = None) -> int:
+        """
+        Record a behavioral event (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED, MOVED).
+
+        Args:
+            object_id: Database object ID
+            class_name: Object class name
+            event_type: Event type (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED, MOVED)
+            view_angle: Camera view angle (optional)
+            metadata: Additional event metadata as dict (optional)
+
+        Returns:
+            event_id of the created event
+        """
+        cursor = self.conn.cursor()
+        now = datetime.now().isoformat()
+
+        metadata_json = json.dumps(metadata) if metadata else None
+
+        cursor.execute("""
+            INSERT INTO behavioral_events (object_id, class_name, event_type, view_angle, timestamp, metadata)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (object_id, class_name, event_type, view_angle, now, metadata_json))
+
+        event_id = cursor.lastrowid
+        self.conn.commit()
+
+        return event_id
+
+    def get_behavioral_events(self, limit: int = 100, event_type: str = None,
+                              object_id: int = None, since: str = None) -> List[Dict]:
+        """
+        Get behavioral events with optional filters.
+
+        Args:
+            limit: Maximum number of events to return (default 100)
+            event_type: Filter by event type (optional)
+            object_id: Filter by object ID (optional)
+            since: Filter events after this ISO timestamp (optional)
+
+        Returns:
+            List of event dictionaries
+        """
+        cursor = self.conn.cursor()
+
+        query = "SELECT * FROM behavioral_events WHERE 1=1"
+        params = []
+
+        if event_type:
+            query += " AND event_type = ?"
+            params.append(event_type)
+
+        if object_id:
+            query += " AND object_id = ?"
+            params.append(object_id)
+
+        if since:
+            query += " AND timestamp > ?"
+            params.append(since)
+
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+
+        events = []
+        for row in rows:
+            event = dict(row)
+            # Parse metadata JSON if present
+            if event.get('metadata'):
+                try:
+                    event['metadata'] = json.loads(event['metadata'])
+                except:
+                    pass
+            events.append(event)
+
+        return events
+
+    def get_behavioral_event_stats(self) -> Dict:
+        """Get statistics about behavioral events."""
+        cursor = self.conn.cursor()
+
+        # Count by event type
+        cursor.execute("""
+            SELECT event_type, COUNT(*) as count
+            FROM behavioral_events
+            GROUP BY event_type
+        """)
+        event_counts = {row['event_type']: row['count'] for row in cursor.fetchall()}
+
+        # Total events
+        cursor.execute("SELECT COUNT(*) as count FROM behavioral_events")
+        total = cursor.fetchone()['count']
+
+        # Events in last hour
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM behavioral_events
+            WHERE timestamp > datetime('now', '-1 hour')
+        """)
+        last_hour = cursor.fetchone()['count']
+
+        # Events today
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM behavioral_events
+            WHERE timestamp > datetime('now', 'start of day')
+        """)
+        today = cursor.fetchone()['count']
+
+        return {
+            'total_events': total,
+            'events_last_hour': last_hour,
+            'events_today': today,
+            'by_type': event_counts
+        }
+
+    def clear_behavioral_events(self, before: str = None):
+        """
+        Clear behavioral events.
+
+        Args:
+            before: Clear events before this ISO timestamp. If None, clears all.
+        """
+        cursor = self.conn.cursor()
+
+        if before:
+            cursor.execute("DELETE FROM behavioral_events WHERE timestamp < ?", (before,))
+        else:
+            cursor.execute("DELETE FROM behavioral_events")
+
         self.conn.commit()
 
     # === CLASS MANAGEMENT METHODS ===

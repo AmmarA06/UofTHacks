@@ -24,7 +24,8 @@ class GroundingDinoSystem:
 
     def __init__(self, detection_classes, endpoint=None, api_host="127.0.0.1", api_port=8000,
                  pan_tilt_port=None, ema_alpha=0.25,
-                 confidence=0.40, resize_width=1920, jpeg_quality=100):
+                 confidence=0.40, resize_width=1920, jpeg_quality=100,
+                 movement_threshold=10.0):
         print("=" * 70)
         print("VISUAL DATABASE - GROUNDING DINO + DATABASE + API SERVER")
         print("=" * 70)
@@ -161,12 +162,17 @@ class GroundingDinoSystem:
         self.servo_cooldown = 2.0  # Seconds to wait after servo movement
 
         # Per-view object tracking (one object per class per view, DB insertion once)
-        print("\nInitializing per-view object tracker...")
+        # Movement threshold is configurable (default 10% of frame dimensions)
+        print("\nInitializing per-view object tracker with movement detection...")
+        self.movement_threshold_percent = movement_threshold  # Configurable movement threshold (%)
         self.view_tracker = ViewObjectTracker(
             views=self.pan_positions,
             disappear_timeout=7.0,      # 7s timeout for object disappearance (accounts for servo movement + detection lag)
             update_interval=10.0,       # Update thumbnail/data every 10s
-            quality_threshold=0.15      # Update if confidence improves by +0.15
+            quality_threshold=0.15,     # Update if confidence improves by +0.15
+            movement_threshold_percent=self.movement_threshold_percent,  # CV movement threshold
+            frame_width=1920,           # Kinect color frame width
+            frame_height=1080           # Kinect color frame height
         )
 
         # Track which keys are currently pressed
@@ -205,6 +211,8 @@ class GroundingDinoSystem:
 
         # Process actions from tracker
         for det, action, object_id in tracker_actions:
+            bbox = det.get('bbox')  # Extract bbox for home position
+
             if action == 'add_to_db':
                 # Add to database (first time at this view) - create directly, no matching
                 new_object_id = self.db.create_object(det, rgb_frame)
@@ -214,8 +222,12 @@ class GroundingDinoSystem:
 
                 processed_object_ids.append(new_object_id)
 
-                # Mark as added in view tracker
-                self.view_tracker.mark_added_to_db(current_view, det['class_name'], new_object_id)
+                # Set home position for movement tracking (ENTRY event)
+                if bbox is not None:
+                    self.db.set_home_position(new_object_id, bbox)
+
+                # Mark as added in view tracker (also registers with movement detector)
+                self.view_tracker.mark_added_to_db(current_view, det['class_name'], new_object_id, bbox)
                 self.objects_created += 1
 
             elif action == 'update_present':
@@ -223,6 +235,9 @@ class GroundingDinoSystem:
                 success = self.db.mark_object_present(object_id, det, rgb_frame)
                 if success:
                     processed_object_ids.append(object_id)
+                    # Reset home position (new appearance = new home)
+                    if bbox is not None:
+                        self.db.set_home_position(object_id, bbox)
                     self.objects_updated += 1
 
             elif action == 'update_data':
@@ -231,15 +246,55 @@ class GroundingDinoSystem:
                 processed_object_ids.append(object_id)
                 self.objects_updated += 1
 
+                # Update movement state in database if available
+                if 'is_moved' in det and 'behavioral_state' in det:
+                    self.db.update_movement_state(
+                        object_id,
+                        det['is_moved'],
+                        det['behavioral_state']
+                    )
+
             elif action == 'skip':
                 # Already present and tracked - add to processed list
                 if object_id is not None:
                     processed_object_ids.append(object_id)
+                    # Still update movement state if available
+                    if 'is_moved' in det and 'behavioral_state' in det:
+                        self.db.update_movement_state(
+                            object_id,
+                            det['is_moved'],
+                            det['behavioral_state']
+                        )
 
         # Process pending absent marks (objects that timed out)
         pending_absent = self.view_tracker.get_pending_absent_marks()
         for view_angle, class_name, object_id in pending_absent:
             self.db.mark_object_absent(object_id)
+
+        # Process behavioral events (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
+        behavioral_events = self.view_tracker.get_pending_behavioral_events()
+        for event in behavioral_events:
+            event_type = event.get('type')
+            obj_id = event.get('object_id')
+            class_name = event.get('class_name', 'unknown')
+            view_angle = event.get('view_angle')
+
+            if obj_id and event_type:
+                # Update object state
+                self.db.set_behavioral_state(obj_id, event_type)
+
+                # Record event in timeline
+                metadata = {k: v for k, v in event.items()
+                           if k not in ('type', 'object_id', 'class_name', 'view_angle')}
+                self.db.record_behavioral_event(
+                    object_id=obj_id,
+                    class_name=class_name,
+                    event_type=event_type,
+                    view_angle=view_angle,
+                    metadata=metadata if metadata else None
+                )
+
+                print(f"  [Behavioral] {class_name} -> {event_type}")
 
         # Cache results for when GPU is busy
         self.last_detections = detections
@@ -440,7 +495,12 @@ class GroundingDinoSystem:
                         # Show current view and tracking info
                         view_summary = self.view_tracker.get_view_summary(self.current_pan)
                         tracked_count = view_summary.get('total_objects', 0)
-                        cv2.putText(vis, f"View: {self.current_pan}° | Tracked: {tracked_count} objects",
+
+                        # Count moved objects
+                        moved_count = sum(1 for obj in view_summary.get('objects', []) if obj.get('is_moved'))
+                        movement_threshold = self.view_tracker.get_movement_threshold()
+
+                        cv2.putText(vis, f"View: {self.current_pan}° | Tracked: {tracked_count} | Moved: {moved_count} | Threshold: {movement_threshold}%",
                                    (10, 150),
                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
@@ -565,10 +625,11 @@ class GroundingDinoSystem:
                     print("=" * 70 + "\n")
 
                 elif key == ord('v'):
-                    # Show view tracker status
+                    # Show view tracker status with movement info
                     print("\n" + "=" * 70)
-                    print("PER-VIEW OBJECT TRACKER STATUS")
+                    print("PER-VIEW OBJECT TRACKER STATUS (with Movement Detection)")
                     print("=" * 70)
+                    print(f"Movement Threshold: {self.view_tracker.get_movement_threshold()}%")
                     summaries = self.view_tracker.get_all_views_summary()
                     for summary in summaries:
                         view_angle = summary['view_angle']
@@ -578,10 +639,13 @@ class GroundingDinoSystem:
                             for obj in summary['objects']:
                                 if obj['in_db']:
                                     presence = "PRESENT" if obj.get('is_present', False) else "ABSENT"
-                                    status = f"[DB:{obj['object_id']}] {presence}"
+                                    moved = "MOVED" if obj.get('is_moved', False) else "HOME"
+                                    behavior = obj.get('behavioral_state', 'NONE')
+                                    status = f"[DB:{obj['object_id']}] {presence} | {moved}"
                                 else:
                                     status = "PENDING"
-                                print(f"  - {obj['class_name']:20s} {status:20s} | detections: {obj['detection_count']:3d} | last seen: {obj['time_since_seen']:.1f}s ago")
+                                    behavior = "N/A"
+                                print(f"  - {obj['class_name']:20s} {status:30s} | {behavior:18s} | detections: {obj['detection_count']:3d}")
                         else:
                             print("  (no objects)")
                     print("=" * 70 + "\n")
@@ -671,6 +735,10 @@ Examples:
     parser.add_argument('--jpeg-quality', type=int, default=100,
                         help='JPEG quality for compression (1-100, default: 100 - maximum quality)')
 
+    # Movement detection (CV-based)
+    parser.add_argument('--movement-threshold', type=float, default=10.0,
+                        help='Movement threshold as percentage of frame dimensions (default: 10.0%%)')
+
     args = parser.parse_args()
 
     print("=" * 70)
@@ -710,6 +778,7 @@ Examples:
     print(f"EMA alpha (position smoothing): {args.ema_alpha:.2f}")
     print(f"GPU upload resolution: {args.resize_width}px")
     print(f"JPEG quality: {args.jpeg_quality}%")
+    print(f"Movement threshold: {args.movement_threshold}% of frame dimensions")
     print("=" * 70)
 
     try:
@@ -721,7 +790,8 @@ Examples:
             ema_alpha=args.ema_alpha,
             confidence=args.confidence,
             resize_width=args.resize_width,
-            jpeg_quality=args.jpeg_quality
+            jpeg_quality=args.jpeg_quality,
+            movement_threshold=args.movement_threshold
         )
         system.run()
 

@@ -77,6 +77,70 @@ class KinectCamera:
         # Transform to world coordinates based on pan angle
         return self.camera_to_world_coords(x_cam, y_cam, z_cam, pan_angle)
 
+    def estimate_depth(self, bbox, class_name=None, last_known_depth=None):
+        """
+        Estimate depth when real depth is unavailable.
+        Uses hybrid strategy: last_known > bbox_size > class_default > global_default
+        
+        Args:
+            bbox: Bounding box (x, y, w, h)
+            class_name: Object class name (optional, for class-aware defaults)
+            last_known_depth: Last measured real depth for this object (optional)
+        
+        Returns:
+            Estimated depth in millimeters
+        """
+        # Class-specific typical depths (can be tuned based on your setup)
+        CLASS_TYPICAL_DEPTHS = {
+            'laptop': 1200,
+            'laptop computer': 1200,
+            'mouse': 1000,
+            'wireless mouse': 1000,
+            'keyboard': 1200,
+            'mechanical keyboard': 1200,
+            'phone': 1100,
+            'smartphone': 1100,
+            'water bottle': 1000,
+            'coffee mug': 1000,
+            'notebook': 1200,
+            'book': 1200,
+            'tablet': 1100,
+            'headphones': 1100,
+        }
+        
+        GLOBAL_DEFAULT_DEPTH = 1200  # 1.2m - typical desk distance
+        
+        # Priority 1: Use last known real depth if available and reasonable
+        if last_known_depth and 500 <= last_known_depth <= 3000:
+            return last_known_depth
+        
+        # Priority 2: Bbox size-based estimation
+        x, y, w, h = bbox
+        bbox_area = w * h
+        
+        # Reference: typical laptop at ~1200mm is about 150x200px = 30000px²
+        reference_area = 30000
+        reference_depth = 1200
+        
+        # Inverse square relationship (larger bbox = closer)
+        if bbox_area > 0:
+            estimated_depth = reference_depth * math.sqrt(reference_area / bbox_area)
+        else:
+            estimated_depth = GLOBAL_DEFAULT_DEPTH
+        
+        # Priority 3: Blend with class-specific default if available
+        if class_name:
+            class_name_lower = class_name.lower()
+            if class_name_lower in CLASS_TYPICAL_DEPTHS:
+                class_depth = CLASS_TYPICAL_DEPTHS[class_name_lower]
+                # 70% bbox-based, 30% class default
+                estimated_depth = 0.7 * estimated_depth + 0.3 * class_depth
+        
+        # Clamp to reasonable range (0.5m to 3m)
+        estimated_depth = max(500, min(3000, estimated_depth))
+        
+        return estimated_depth
+
     def camera_to_world_coords(self, x_cam, y_cam, z_cam, pan_angle):
         """
         Transform camera-relative coordinates to world coordinates

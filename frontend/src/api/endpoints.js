@@ -48,10 +48,19 @@ export const groupsAPI = {
   delete: (groupId) => api.delete(`/api/groups/${groupId}`),
 };
 
+// Behavioral Events endpoints
+export const eventsAPI = {
+  getAll: (params = {}) => api.get('/api/events', { params }),
+  getStats: () => api.get('/api/events/stats'),
+  getStream: (since = null) => api.get('/api/events/stream', { params: { since } }),
+  clear: (before = null) => api.delete('/api/events', { params: { before } }),
+};
+
 export default {
   objects: objectsAPI,
   stats: statsAPI,
   classes: classesAPI,
   groups: groupsAPI,
   detections: detectionsAPI,
+  events: eventsAPI,
 };
