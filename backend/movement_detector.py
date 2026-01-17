@@ -83,7 +83,8 @@ class MovementDetector:
                  movement_threshold_percent: float = 10.0,
                  frame_width: int = 1920,
                  frame_height: int = 1080,
-                 cart_abandoned_timeout: float = 4.0):
+                 cart_abandoned_timeout: float = 4.0,
+                 stabilization_time: float = 2.0):
         """
         Initialize the movement detector.
 
@@ -95,11 +96,15 @@ class MovementDetector:
             frame_height: Default frame height for threshold calculation
             cart_abandoned_timeout: Seconds after isMoved=True without EXIT to trigger
                                    CART_ABANDONED. Default 4 seconds.
+            stabilization_time: Seconds to wait after registration before movement
+                               detection is active. Prevents false positives from
+                               detector bbox variance. Default 2 seconds.
         """
         self.movement_threshold_percent = movement_threshold_percent
         self.frame_width = frame_width
         self.frame_height = frame_height
         self.cart_abandoned_timeout = cart_abandoned_timeout
+        self.stabilization_time = stabilization_time
 
         # Object states: {(view_angle, class_name): ObjectMovementState}
         self.object_states: Dict[Tuple[int, str], ObjectMovementState] = {}
@@ -112,6 +117,7 @@ class MovementDetector:
         self.person_proximity: Dict[Tuple[int, str], Dict] = {}
 
         print(f"[MovementDetector] Initialized with {movement_threshold_percent}% threshold")
+        print(f"[MovementDetector] Stabilization time: {stabilization_time}s (no movement detection during this period)")
         print(f"[MovementDetector] CART_ABANDONED timeout: {cart_abandoned_timeout}s after isMoved")
         print(f"[MovementDetector] Frame dimensions: {frame_width}x{frame_height}")
         print(f"[MovementDetector] Threshold pixels: X={self._get_threshold_x():.0f}px, Y={self._get_threshold_y():.0f}px")
@@ -247,8 +253,26 @@ class MovementDetector:
         # Calculate displacement from home
         dx, dy = self._calculate_displacement(state)
 
+        # Check if still in stabilization period
+        time_since_registered = current_time - state.first_seen_time
+        in_stabilization = time_since_registered < self.stabilization_time
+
         # Check movement state transitions (only transition to moved, never back)
         if not state.is_moved:
+            # Skip movement detection during stabilization period
+            if in_stabilization:
+                # During stabilization, update home position to current position
+                # This allows the home position to "settle" as the detector stabilizes
+                state.home_x = center_x
+                state.home_y = center_y
+                return state
+
+            # Skip if a main behavioral event already fired (prevents re-triggering)
+            if state.behavioral_state in (BehavioralState.WINDOW_SHOPPED,
+                                          BehavioralState.CART_ABANDONED,
+                                          BehavioralState.PRODUCT_PURCHASED):
+                return state
+
             # Check if object has moved beyond threshold
             if self._is_beyond_threshold(dx, dy):
                 state.is_moved = True
