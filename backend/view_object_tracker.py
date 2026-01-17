@@ -11,10 +11,13 @@ Features:
 - Guards database insertion (one-time per object per view)
 - Periodic thumbnail replacement (10s interval OR +0.15 confidence boost)
 - Periodic position/confidence updates with EMA smoothing
+- CV-based movement detection using 2D bounding box coordinates
+- Behavioral state machine (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
 """
 
 import time
 from typing import List, Dict, Tuple, Optional
+from movement_detector import MovementDetector, BehavioralState
 
 
 class ViewObjectTracker:
@@ -26,7 +29,8 @@ class ViewObjectTracker:
     """
 
     def __init__(self, views=[0, 90, 180], disappear_timeout=5.0,
-                 update_interval=10.0, quality_threshold=0.15):
+                 update_interval=10.0, quality_threshold=0.15,
+                 movement_threshold_percent=10.0, frame_width=1920, frame_height=1080):
         """
         Initialize the view tracker.
 
@@ -35,6 +39,9 @@ class ViewObjectTracker:
             disappear_timeout: Seconds before an object is considered "left" (default: 5.0s)
             update_interval: Seconds between periodic data updates (default: 10.0s)
             quality_threshold: Confidence boost needed for quality-based update (default: 0.15)
+            movement_threshold_percent: Percentage of frame dimensions for movement detection (default: 10.0%)
+            frame_width: Frame width for movement threshold calculation (default: 1920)
+            frame_height: Frame height for movement threshold calculation (default: 1080)
         """
         self.views = views
         self.disappear_timeout = disappear_timeout
@@ -59,9 +66,20 @@ class ViewObjectTracker:
         # Track objects that need to be marked as absent
         self.pending_absent_marks = []  # List of (view_angle, class_name, object_id)
 
+        # Initialize movement detector for CV-based isMoved tracking
+        self.movement_detector = MovementDetector(
+            movement_threshold_percent=movement_threshold_percent,
+            frame_width=frame_width,
+            frame_height=frame_height
+        )
+
+        # Pending behavioral events (from movement detector)
+        self.pending_behavioral_events = []
+
         print(f"[ViewTracker] Initialized with {len(views)} views: {views}")
         print(f"[ViewTracker] Disappear timeout: {disappear_timeout}s")
         print(f"[ViewTracker] Update interval: {update_interval}s, quality threshold: +{quality_threshold}")
+        print(f"[ViewTracker] Movement threshold: {movement_threshold_percent}% of frame dimensions")
 
     def update(self, current_view: int, detections: List[Dict]) -> List[Tuple[Dict, str, Optional[int]]]:
         """
@@ -130,18 +148,18 @@ class ViewObjectTracker:
                 state = view_state[class_name]
                 state['last_seen_time'] = current_time
                 state['detection_count'] += 1
-                
+
                 # Update last known position if we have valid depth
                 if center_3d is not None:
                     state['last_known_position_3d'] = center_3d
-                
+
                 # Update bbox
                 if bbox is not None:
                     state['last_bbox'] = bbox
-                
+
                 # Inject last known position into detection (for database fallback)
                 det['last_known_position_3d'] = state['last_known_position_3d']
-                
+
                 if not state['in_db']:
                     # Hasn't been added to DB yet (shouldn't happen, but handle gracefully)
                     if center_3d is None and state['last_known_position_3d'] is None:
@@ -155,9 +173,26 @@ class ViewObjectTracker:
                     state['is_present'] = True
                     state['last_update_time'] = current_time
                     state['best_confidence'] = det.get('confidence', 0.0)
+
+                    # Re-register with movement detector (new "home" position)
+                    if bbox is not None and state['object_id'] is not None:
+                        self.movement_detector.register_object(
+                            current_view, class_name, state['object_id'], bbox
+                        )
+
                     actions.append((det, 'update_present', state['object_id']))
                 else:
-                    # Already present and tracked - check if we need periodic update
+                    # Already present and tracked - update movement detection
+                    if bbox is not None and state['object_id'] is not None:
+                        movement_state = self.movement_detector.update_position(
+                            current_view, class_name, bbox
+                        )
+                        # Inject movement state into detection for database update
+                        if movement_state:
+                            det['is_moved'] = movement_state.is_moved
+                            det['behavioral_state'] = movement_state.behavioral_state.value
+
+                    # Check if we need periodic update
                     current_confidence = det.get('confidence', 0.0)
                     time_since_update = current_time - state['last_update_time']
                     confidence_boost = current_confidence - state['best_confidence']
@@ -193,19 +228,27 @@ class ViewObjectTracker:
                     # Mark as absent (don't delete from state - keep tracking in case it comes back)
                     state['is_present'] = False
                     if state['in_db'] and state['object_id'] is not None:
+                        # Trigger EXIT behavioral event in movement detector
+                        exit_event = self.movement_detector.handle_exit(current_view, class_name)
+                        if exit_event:
+                            self.pending_behavioral_events.append(exit_event)
+
                         self.pending_absent_marks.append((current_view, class_name, state['object_id']))
                         print(f"  [View {current_view}°] ABSENT: {class_name} (timeout: {time_since_seen:.1f}s, object_id: {state['object_id']})")
 
         return actions
 
-    def mark_added_to_db(self, view_angle: int, class_name: str, object_id: int):
+    def mark_added_to_db(self, view_angle: int, class_name: str, object_id: int,
+                        bbox: Tuple[int, int, int, int] = None):
         """
         Mark that an object has been successfully added to the database.
+        Also registers the object with movement detector for isMoved tracking.
 
         Args:
             view_angle: Servo angle of the view
             class_name: Class name of the object
             object_id: Database object ID
+            bbox: Initial bounding box (x, y, w, h) for home position
         """
         if view_angle in self.view_states:
             if class_name in self.view_states[view_angle]:
@@ -218,6 +261,15 @@ class ViewObjectTracker:
                     state['last_update_time'] = time.time()
                 if 'best_confidence' not in state:
                     state['best_confidence'] = 0.0
+
+                # Register with movement detector for isMoved tracking (ENTRY event)
+                # Use provided bbox or fall back to last known bbox
+                home_bbox = bbox or state.get('last_bbox')
+                if home_bbox is not None:
+                    self.movement_detector.register_object(
+                        view_angle, class_name, object_id, home_bbox
+                    )
+
                 print(f"  [View {view_angle}°] DB_ADD: {class_name} -> object_id {object_id}")
 
     def get_pending_absent_marks(self) -> List[Tuple[int, str, int]]:
@@ -230,6 +282,42 @@ class ViewObjectTracker:
         pending = self.pending_absent_marks.copy()
         self.pending_absent_marks.clear()
         return pending
+
+    def get_pending_behavioral_events(self) -> List[Dict]:
+        """
+        Get and clear pending behavioral events (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED).
+
+        Returns:
+            List of behavioral event dictionaries
+        """
+        # Get events from movement detector
+        movement_events = self.movement_detector.get_pending_events()
+        # Combine with any pending behavioral events
+        all_events = self.pending_behavioral_events + movement_events
+        self.pending_behavioral_events.clear()
+        return all_events
+
+    def set_movement_threshold(self, percent: float):
+        """
+        Update the movement threshold percentage.
+
+        Args:
+            percent: New threshold percentage (0-100). Default is 10%.
+        """
+        self.movement_detector.set_threshold(percent)
+
+    def get_movement_threshold(self) -> float:
+        """Get current movement threshold percentage."""
+        return self.movement_detector.movement_threshold_percent
+
+    def get_object_movement_state(self, view_angle: int, class_name: str):
+        """
+        Get movement state for a specific object.
+
+        Returns:
+            ObjectMovementState or None if not tracked
+        """
+        return self.movement_detector.get_object_state(view_angle, class_name)
 
     def get_view_summary(self, view_angle: int) -> Dict:
         """
@@ -255,6 +343,12 @@ class ViewObjectTracker:
 
         for class_name, state in view_state.items():
             time_since_seen = current_time - state['last_seen_time']
+
+            # Get movement state if available
+            movement_state = self.movement_detector.get_object_state(view_angle, class_name)
+            is_moved = movement_state.is_moved if movement_state else False
+            behavioral_state = movement_state.behavioral_state.value if movement_state else 'NONE'
+
             summary['objects'].append({
                 'class_name': class_name,
                 'object_id': state['object_id'],
@@ -262,7 +356,9 @@ class ViewObjectTracker:
                 'is_present': state['is_present'],
                 'detection_count': state['detection_count'],
                 'time_since_seen': time_since_seen,
-                'first_seen': state['first_seen_time']
+                'first_seen': state['first_seen_time'],
+                'is_moved': is_moved,
+                'behavioral_state': behavioral_state
             })
 
         return summary

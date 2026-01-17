@@ -121,6 +121,36 @@ class VisualDatabase:
             cursor.execute("ALTER TABLE objects ADD COLUMN class_id INTEGER REFERENCES classes(class_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_objects_class_id ON objects(class_id)")
 
+        # Add movement tracking columns (backward compatible migration)
+        cursor.execute("PRAGMA table_info(objects)")
+        columns = [row[1] for row in cursor.fetchall()]
+
+        # Home position (2D bbox center when first detected)
+        if 'home_bbox_x' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_x INTEGER")
+        if 'home_bbox_y' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_y INTEGER")
+        if 'home_bbox_w' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_w INTEGER")
+        if 'home_bbox_h' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN home_bbox_h INTEGER")
+
+        # Movement state
+        if 'is_moved' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN is_moved INTEGER DEFAULT 0")
+        if 'was_ever_moved' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN was_ever_moved INTEGER DEFAULT 0")
+
+        # Behavioral state (NONE, PRESENT, MOVED, WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
+        if 'behavioral_state' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN behavioral_state TEXT DEFAULT 'NONE'")
+
+        # Behavioral timestamps
+        if 'moved_time' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN moved_time TEXT")
+        if 'returned_time' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN returned_time TEXT")
+
 
         # Object Groups table for grouping/tagging multiple objects
         cursor.execute("""
@@ -584,6 +614,138 @@ class VisualDatabase:
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM objects WHERE object_id = ?", (object_id,))
         self.conn.commit()
+
+    # === MOVEMENT TRACKING METHODS ===
+
+    def set_home_position(self, object_id: int, bbox: Tuple[int, int, int, int]):
+        """
+        Set the home position (initial bounding box) for an object.
+        Called when object is first detected (ENTRY event).
+
+        Args:
+            object_id: Database object ID
+            bbox: Initial bounding box (x, y, w, h)
+        """
+        cursor = self.conn.cursor()
+        x, y, w, h = bbox
+        cursor.execute("""
+            UPDATE objects SET
+                home_bbox_x = ?,
+                home_bbox_y = ?,
+                home_bbox_w = ?,
+                home_bbox_h = ?,
+                behavioral_state = 'PRESENT'
+            WHERE object_id = ?
+        """, (x, y, w, h, object_id))
+        self.conn.commit()
+
+    def update_movement_state(self, object_id: int, is_moved: bool,
+                              behavioral_state: str = None):
+        """
+        Update movement state for an object.
+
+        Args:
+            object_id: Database object ID
+            is_moved: Whether the object is currently moved from home
+            behavioral_state: New behavioral state (optional)
+        """
+        cursor = self.conn.cursor()
+        now = datetime.now().isoformat()
+
+        if behavioral_state:
+            if behavioral_state == 'MOVED' and is_moved:
+                # Record moved time
+                cursor.execute("""
+                    UPDATE objects SET
+                        is_moved = 1,
+                        was_ever_moved = 1,
+                        behavioral_state = ?,
+                        moved_time = ?
+                    WHERE object_id = ?
+                """, (behavioral_state, now, object_id))
+            elif behavioral_state == 'CART_ABANDONED':
+                # Record returned time
+                cursor.execute("""
+                    UPDATE objects SET
+                        is_moved = 0,
+                        behavioral_state = ?,
+                        returned_time = ?
+                    WHERE object_id = ?
+                """, (behavioral_state, now, object_id))
+            else:
+                cursor.execute("""
+                    UPDATE objects SET
+                        is_moved = ?,
+                        behavioral_state = ?
+                    WHERE object_id = ?
+                """, (1 if is_moved else 0, behavioral_state, object_id))
+        else:
+            cursor.execute("""
+                UPDATE objects SET is_moved = ?
+                WHERE object_id = ?
+            """, (1 if is_moved else 0, object_id))
+
+        self.conn.commit()
+
+    def set_behavioral_state(self, object_id: int, state: str):
+        """
+        Set the behavioral state for an object.
+
+        Args:
+            object_id: Database object ID
+            state: Behavioral state (NONE, PRESENT, MOVED, WINDOW_SHOPPED,
+                   CART_ABANDONED, PRODUCT_PURCHASED)
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE objects SET behavioral_state = ?
+            WHERE object_id = ?
+        """, (state, object_id))
+        self.conn.commit()
+
+    def get_home_position(self, object_id: int) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Get the home position (initial bounding box) for an object.
+
+        Returns:
+            (x, y, w, h) tuple or None if not set
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT home_bbox_x, home_bbox_y, home_bbox_w, home_bbox_h
+            FROM objects WHERE object_id = ?
+        """, (object_id,))
+        row = cursor.fetchone()
+        if row and row['home_bbox_x'] is not None:
+            return (row['home_bbox_x'], row['home_bbox_y'],
+                    row['home_bbox_w'], row['home_bbox_h'])
+        return None
+
+    def get_movement_statistics(self) -> Dict:
+        """Get statistics about object movement states"""
+        cursor = self.conn.cursor()
+
+        # Count by behavioral state
+        cursor.execute("""
+            SELECT behavioral_state, COUNT(*) as count
+            FROM objects
+            GROUP BY behavioral_state
+        """)
+        state_counts = {row['behavioral_state']: row['count'] for row in cursor.fetchall()}
+
+        # Count moved objects
+        cursor.execute("SELECT COUNT(*) as count FROM objects WHERE is_moved = 1")
+        moved_count = cursor.fetchone()['count']
+
+        # Count objects that were ever moved
+        cursor.execute("SELECT COUNT(*) as count FROM objects WHERE was_ever_moved = 1")
+        ever_moved_count = cursor.fetchone()['count']
+
+        return {
+            'moved_count': moved_count,
+            'ever_moved_count': ever_moved_count,
+            'behavioral_states': state_counts
+        }
 
     # === CLASS MANAGEMENT METHODS ===
 
