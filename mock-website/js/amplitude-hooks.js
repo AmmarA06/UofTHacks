@@ -456,7 +456,7 @@
                 product_category: product.category,
                 price: product.basePrice,
                 sku: product.sku,
-                Page_URL: 'https://uof-t-hacks-eight.vercel.app/',
+                Page_URL: window.location.href,
                 ...properties,
                 ...(instructions && { instructions }) // Add instructions if present
             };
