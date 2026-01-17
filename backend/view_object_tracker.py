@@ -198,17 +198,21 @@ class ViewObjectTracker:
                     state['last_update_time'] = current_time
                     state['best_confidence'] = det.get('confidence', 0.0)
 
-                    # Re-register with movement detector (new "home" position)
+                    # Check if already registered in movement detector
                     if bbox is not None and state['object_id'] is not None:
-                        self.movement_detector.register_object(
-                            current_view, class_name, state['object_id'], bbox
-                        )
+                        existing_state = self.movement_detector.get_object_state(current_view, class_name)
+                        if existing_state is None:
+                            # First time only - register with movement detector
+                            self.movement_detector.register_object(
+                                current_view, class_name, state['object_id'], bbox
+                            )
+                        # else: Already registered, keep existing home position
 
                     actions.append((det, 'update_present', state['object_id']))
                 else:
                     # Already present and tracked - update movement detection
-                    # Only track movement with REAL depth to avoid false positives
-                    if bbox is not None and state['object_id'] is not None and depth_source == 'real':
+                    # Track movement using 2D bbox (works regardless of depth quality)
+                    if bbox is not None and state['object_id'] is not None:
                         movement_state = self.movement_detector.update_position(
                             current_view, class_name, bbox
                         )
@@ -216,6 +220,14 @@ class ViewObjectTracker:
                         if movement_state:
                             det['is_moved'] = movement_state.is_moved
                             det['behavioral_state'] = movement_state.behavioral_state.value
+
+                    # Track person proximity for WINDOW_SHOPPED
+                    # (person_bbox is injected into detections by the main loop)
+                    if bbox is not None and class_name != 'person':
+                        person_bbox = det.get('person_bbox')
+                        self.movement_detector.update_person_proximity(
+                            current_view, class_name, bbox, person_bbox
+                        )
 
                     # Check if we need periodic update
                     current_confidence = det.get('confidence', 0.0)
@@ -253,8 +265,9 @@ class ViewObjectTracker:
                     # Mark as absent (don't delete from state - keep tracking in case it comes back)
                     state['is_present'] = False
                     if state['in_db'] and state['object_id'] is not None:
-                        # Trigger EXIT behavioral event in movement detector
-                        exit_event = self.movement_detector.handle_exit(current_view, class_name)
+                        # Trigger EXIT behavioral event with person proximity tracking
+                        # This uses the new logic: person_triggered for WINDOW_SHOPPED
+                        exit_event = self.movement_detector.handle_exit_with_person(current_view, class_name)
                         if exit_event:
                             self.pending_behavioral_events.append(exit_event)
 
@@ -321,6 +334,25 @@ class ViewObjectTracker:
         all_events = self.pending_behavioral_events + movement_events
         self.pending_behavioral_events.clear()
         return all_events
+
+    def check_cart_abandoned_timeouts(self) -> List[Dict]:
+        """
+        Check for CART_ABANDONED timeouts.
+
+        CART_ABANDONED triggers when:
+        - Object has isMoved=True (was picked up/moved)
+        - 4 seconds have passed since moved_time
+        - Object has NOT exited (still being tracked)
+
+        Should be called periodically (e.g., every frame/update cycle).
+
+        Returns:
+            List of CART_ABANDONED events for objects that timed out
+        """
+        events = self.movement_detector.check_cart_abandoned_timeouts()
+        # Add to pending events for consumption
+        self.pending_behavioral_events.extend(events)
+        return events
 
     def set_movement_threshold(self, percent: float):
         """

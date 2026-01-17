@@ -97,7 +97,9 @@ async def detect(request: Dict):
             result = results[0]
             boxes = result["boxes"].cpu().numpy()
             scores = result["scores"].cpu().numpy()
-            labels = result["labels"]
+
+            # Use text_labels for v4.51.0+, fallback to labels for older versions
+            labels = result.get("text_labels", result.get("labels"))
 
             for box, score, label in zip(boxes, scores, labels):
                 # Apply confidence threshold manually

@@ -9,12 +9,18 @@ Movement Logic:
 - Stores the initial (home) position when an object first appears
 - Calculates displacement from home as a percentage of frame dimensions
 - Sets isMoved=True if displacement exceeds threshold
-- Resets isMoved=False if object returns within threshold of home position
+
+Person Proximity Logic:
+- Tracks when a 'person' class is detected near an object
+- Sets person_triggered=True when person is within proximity threshold
+- Sets person_triggered=False when person leaves proximity
 
 Behavioral State Triggers:
-- WINDOW_SHOPPED: ENTRY -> EXIT (isMoved stayed False)
-- CART_ABANDONED: isMoved(True) -> isMoved(False) (returned to shelf)
-- PRODUCT_PURCHASED: isMoved(True) -> EXIT
+- PRODUCT_PURCHASED: ENTRY -> EXIT (object left the scene = purchased)
+- WINDOW_SHOPPED: ENTRY -> person_triggered=True -> person_triggered=False
+                 (person interacted with object but didn't move it, fires immediately when person leaves)
+- CART_ABANDONED: ENTRY -> isMoved=True, then 4 seconds without EXIT -> CART_ABANDONED
+                 (object was picked up but held for too long without leaving)
 """
 
 import time
@@ -48,6 +54,10 @@ class ObjectMovementState:
     current_x: float = 0.0
     current_y: float = 0.0
 
+    # Smoothed position (EMA filtered to reduce bbox jitter)
+    smoothed_x: float = 0.0
+    smoothed_y: float = 0.0
+
     # Movement state
     is_moved: bool = False
     was_ever_moved: bool = False  # Track if object was ever moved (for CART_ABANDONED)
@@ -59,7 +69,7 @@ class ObjectMovementState:
     first_seen_time: float = 0.0
     last_seen_time: float = 0.0
     moved_time: Optional[float] = None      # When isMoved became True
-    returned_time: Optional[float] = None   # When object returned to home
+    last_cart_abandoned_time: Optional[float] = None  # Cooldown after CART_ABANDONED
 
     # Frame dimensions (for threshold calculation)
     frame_width: int = 1920
@@ -77,7 +87,10 @@ class MovementDetector:
     def __init__(self,
                  movement_threshold_percent: float = 10.0,
                  frame_width: int = 1920,
-                 frame_height: int = 1080):
+                 frame_height: int = 1080,
+                 cart_abandoned_timeout: float = 4.0,
+                 stabilization_time: float = 2.0,
+                 cart_abandoned_cooldown: float = 1.0):
         """
         Initialize the movement detector.
 
@@ -87,10 +100,20 @@ class MovementDetector:
                                        Easily configurable.
             frame_width: Default frame width for threshold calculation
             frame_height: Default frame height for threshold calculation
+            cart_abandoned_timeout: Seconds after isMoved=True without EXIT to trigger
+                                   CART_ABANDONED. Default 4 seconds.
+            stabilization_time: Seconds to wait after registration before movement
+                               detection is active. Prevents false positives from
+                               detector bbox variance. Default 2 seconds.
+            cart_abandoned_cooldown: Seconds to wait after CART_ABANDONED before allowing
+                                    new MOVED detection. Prevents infinite loop. Default 1 second.
         """
         self.movement_threshold_percent = movement_threshold_percent
         self.frame_width = frame_width
         self.frame_height = frame_height
+        self.cart_abandoned_timeout = cart_abandoned_timeout
+        self.stabilization_time = stabilization_time
+        self.cart_abandoned_cooldown = cart_abandoned_cooldown
 
         # Object states: {(view_angle, class_name): ObjectMovementState}
         self.object_states: Dict[Tuple[int, str], ObjectMovementState] = {}
@@ -98,7 +121,14 @@ class MovementDetector:
         # Pending behavioral events (to be consumed by event system)
         self.pending_events: List[Dict] = []
 
+        # Person proximity tracking for WINDOW_SHOPPED
+        # {(view_angle, class_name): {'person_triggered': bool, 'last_person_time': float}}
+        self.person_proximity: Dict[Tuple[int, str], Dict] = {}
+
         print(f"[MovementDetector] Initialized with {movement_threshold_percent}% threshold")
+        print(f"[MovementDetector] Stabilization time: {stabilization_time}s (no movement detection during this period)")
+        print(f"[MovementDetector] CART_ABANDONED timeout: {cart_abandoned_timeout}s after isMoved")
+        print(f"[MovementDetector] CART_ABANDONED cooldown: {cart_abandoned_cooldown}s (prevents re-trigger loop)")
         print(f"[MovementDetector] Frame dimensions: {frame_width}x{frame_height}")
         print(f"[MovementDetector] Threshold pixels: X={self._get_threshold_x():.0f}px, Y={self._get_threshold_y():.0f}px")
 
@@ -147,14 +177,32 @@ class MovementDetector:
         threshold_y = self._get_threshold_y()
         return dx > threshold_x or dy > threshold_y
 
-    def _is_within_threshold(self, dx: float, dy: float) -> bool:
+    def _is_within_threshold(self, dx: float, dy: float, use_tolerance: bool = False) -> bool:
         """
-        Check if object is within threshold of home position.
+        Check if displacement is within movement threshold (i.e., back at home).
 
-        Uses AND logic: home if BOTH x AND y are within threshold.
+        Uses AND logic: within threshold if BOTH x AND y are within bounds.
+        
+        Args:
+            dx: X displacement in pixels
+            dy: Y displacement in pixels
+            use_tolerance: If True, use a SMALLER threshold (0.5x) to ensure object
+                         is truly close to home before triggering return. This prevents
+                         the overlap zone where an object can be both "moved" and "returned".
+        
+        Returns:
+            True if object is within threshold (close to home position)
         """
         threshold_x = self._get_threshold_x()
         threshold_y = self._get_threshold_y()
+        
+        if use_tolerance:
+            # Use 50% of threshold - object must be genuinely close to home
+            # This creates hysteresis: MOVED triggers at 100% threshold,
+            # RETURNED triggers at 50% threshold (must be closer to home)
+            threshold_x *= 0.5
+            threshold_y *= 0.5
+        
         return dx <= threshold_x and dy <= threshold_y
 
     def _get_bbox_center(self, bbox: Tuple[int, int, int, int]) -> Tuple[float, float]:
@@ -235,18 +283,54 @@ class MovementDetector:
         center_x, center_y = self._get_bbox_center(bbox)
         current_time = time.time()
 
-        # Update current position
-        state.current_x = center_x
-        state.current_y = center_y
+        # Apply EMA smoothing to bbox center to reduce jitter
+        if state.smoothed_x == 0.0:
+            # First time - initialize smoothed position
+            state.smoothed_x = center_x
+            state.smoothed_y = center_y
+        else:
+            # Smooth the position (alpha=0.3 means 30% new, 70% old)
+            alpha = 0.3
+            state.smoothed_x = alpha * center_x + (1 - alpha) * state.smoothed_x
+            state.smoothed_y = alpha * center_y + (1 - alpha) * state.smoothed_y
+
+        # Update current position to smoothed values
+        state.current_x = state.smoothed_x
+        state.current_y = state.smoothed_y
         state.last_seen_time = current_time
 
         # Calculate displacement from home
         dx, dy = self._calculate_displacement(state)
 
-        # Check movement state transitions
-        was_moved = state.is_moved
+        # Check if still in stabilization period
+        time_since_registered = current_time - state.first_seen_time
+        in_stabilization = time_since_registered < self.stabilization_time
 
+        # Check movement state transitions (only transition to moved, never back)
         if not state.is_moved:
+            # Skip movement detection during stabilization period
+            if in_stabilization:
+                # Don't update home - just skip movement detection during stabilization
+                # Home position stays locked at registration value
+                return state
+
+            # Skip if already had CART_ABANDONED from timeout (object still in moved position)
+            # This prevents: MOVED -> timeout CART_ABANDONED -> MOVED -> timeout CART_ABANDONED loop
+            # The only valid next event after timeout CART_ABANDONED is EXIT
+            if state.behavioral_state == BehavioralState.CART_ABANDONED:
+                return state
+
+            # Check if we're in cooldown period after return-to-home CART_ABANDONED
+            # This allows: MOVED -> return home -> CART_ABANDONED -> [cooldown] -> MOVED again
+            if state.last_cart_abandoned_time is not None:
+                time_since_cart_abandoned = current_time - state.last_cart_abandoned_time
+                if time_since_cart_abandoned < self.cart_abandoned_cooldown:
+                    # Still in cooldown - skip movement detection to prevent loop
+                    return state
+                else:
+                    # Cooldown expired - clear the timestamp and allow detection
+                    state.last_cart_abandoned_time = None
+
             # Check if object has moved beyond threshold
             if self._is_beyond_threshold(dx, dy):
                 state.is_moved = True
@@ -265,13 +349,11 @@ class MovementDetector:
                     'displacement': (dx, dy),
                     'timestamp': current_time
                 })
-        else:
-            # Check if object has returned to home
-            if self._is_within_threshold(dx, dy):
-                state.is_moved = False
-                state.returned_time = current_time
-                state.behavioral_state = BehavioralState.CART_ABANDONED
 
+        else:
+            # Object was already moved - check if it returned to home
+            if self._is_within_threshold(dx, dy, use_tolerance=True):
+                # Object returned to home position!
                 print(f"  [Movement] {class_name} RETURNED to home! -> CART_ABANDONED")
 
                 # Queue CART_ABANDONED event
@@ -280,81 +362,21 @@ class MovementDetector:
                     'object_id': state.object_id,
                     'class_name': class_name,
                     'view_angle': view_angle,
+                    'return_type': 'immediate',
                     'time_moved_seconds': current_time - state.moved_time if state.moved_time else 0,
                     'timestamp': current_time
                 })
+                
+                # Reset movement tracking to allow new movement detection after cooldown
+                # The cooldown prevents the infinite loop: MOVED -> CART_ABANDONED -> MOVED -> CART_ABANDONED
+                # But allows: MOVED -> CART_ABANDONED -> [cooldown] -> [user moves again] -> MOVED -> EXIT -> PURCHASED
+                state.is_moved = False
+                state.was_ever_moved = False
+                state.moved_time = None
+                state.last_cart_abandoned_time = current_time  # Start cooldown
+                state.behavioral_state = BehavioralState.PRESENT  # Reset to allow new events
 
         return state
-
-    def handle_exit(self, view_angle: int, class_name: str) -> Optional[Dict]:
-        """
-        Handle object EXIT event and determine behavioral outcome.
-
-        Args:
-            view_angle: Camera view angle
-            class_name: Object class name
-
-        Returns:
-            Behavioral event dict, or None if object not registered
-        """
-        key = (view_angle, class_name)
-
-        if key not in self.object_states:
-            return None
-
-        state = self.object_states[key]
-        current_time = time.time()
-
-        event = None
-
-        if state.is_moved:
-            # Object was moved and then exited -> PRODUCT_PURCHASED
-            state.behavioral_state = BehavioralState.PRODUCT_PURCHASED
-            event = {
-                'type': 'PRODUCT_PURCHASED',
-                'object_id': state.object_id,
-                'class_name': class_name,
-                'view_angle': view_angle,
-                'time_moved_seconds': current_time - state.moved_time if state.moved_time else 0,
-                'timestamp': current_time
-            }
-            print(f"  [Movement] {class_name} EXIT while moved -> PRODUCT_PURCHASED")
-
-        elif not state.was_ever_moved:
-            # Object was never moved and exited -> WINDOW_SHOPPED
-            state.behavioral_state = BehavioralState.WINDOW_SHOPPED
-            event = {
-                'type': 'WINDOW_SHOPPED',
-                'object_id': state.object_id,
-                'class_name': class_name,
-                'view_angle': view_angle,
-                'time_present_seconds': current_time - state.first_seen_time,
-                'timestamp': current_time
-            }
-            print(f"  [Movement] {class_name} EXIT without movement -> WINDOW_SHOPPED")
-
-        else:
-            # Object was moved then returned, then exited
-            # This is still WINDOW_SHOPPED (browsed, put back, then removed from view)
-            state.behavioral_state = BehavioralState.WINDOW_SHOPPED
-            event = {
-                'type': 'WINDOW_SHOPPED',
-                'object_id': state.object_id,
-                'class_name': class_name,
-                'view_angle': view_angle,
-                'time_present_seconds': current_time - state.first_seen_time,
-                'was_previously_moved': True,
-                'timestamp': current_time
-            }
-            print(f"  [Movement] {class_name} EXIT (was returned) -> WINDOW_SHOPPED")
-
-        if event:
-            self.pending_events.append(event)
-
-        # Remove object from tracking (will be re-registered on ENTRY)
-        del self.object_states[key]
-
-        return event
 
     def get_pending_events(self) -> List[Dict]:
         """
@@ -386,7 +408,274 @@ class MovementDetector:
         """Reset all tracking state"""
         self.object_states.clear()
         self.pending_events.clear()
+        self.person_proximity.clear()
         print("[MovementDetector] Reset all tracking state")
+
+    # ==================== CART_ABANDONED Timeout Logic ====================
+
+    def check_cart_abandoned_timeouts(self) -> List[Dict]:
+        """
+        Check for objects that should trigger CART_ABANDONED.
+
+        CART_ABANDONED triggers when:
+        - Object has isMoved=True (was picked up/moved)
+        - 4 seconds have passed since moved_time
+        - Object has NOT exited (still being tracked)
+
+        This method should be called periodically (e.g., every frame).
+
+        Returns:
+            List of CART_ABANDONED events for objects that timed out
+        """
+        current_time = time.time()
+        events = []
+        keys_to_clear = []
+
+        for key, state in self.object_states.items():
+            view_angle, class_name = key
+
+            # Skip if not moved or already has a behavioral event
+            if not state.is_moved:
+                continue
+
+            # Skip if already triggered a main event (WINDOW_SHOPPED, CART_ABANDONED, PURCHASED)
+            if state.behavioral_state in (BehavioralState.WINDOW_SHOPPED,
+                                          BehavioralState.CART_ABANDONED,
+                                          BehavioralState.PRODUCT_PURCHASED):
+                continue
+
+            # Check if timeout has elapsed since moved
+            if state.moved_time is not None:
+                elapsed = current_time - state.moved_time
+                if elapsed >= self.cart_abandoned_timeout:
+                    # CART_ABANDONED triggered!
+                    state.behavioral_state = BehavioralState.CART_ABANDONED
+
+                    event = {
+                        'type': 'CART_ABANDONED',
+                        'object_id': state.object_id,
+                        'class_name': class_name,
+                        'view_angle': view_angle,
+                        'time_moved_seconds': elapsed,
+                        'timestamp': current_time
+                    }
+                    events.append(event)
+                    keys_to_clear.append(key)
+
+                    print(f"  [Movement] {class_name} CART_ABANDONED (moved for {elapsed:.1f}s without exit)")
+
+        # Clear atomic state for objects that triggered CART_ABANDONED
+        for key in keys_to_clear:
+            self._clear_atomic_state(key)
+
+        return events
+
+    def _clear_atomic_state(self, key: Tuple[int, str], event_type: str = 'CART_ABANDONED'):
+        """
+        Clear atomic state for an object after a main event fires.
+
+        This prevents the atomic events (isMoved, person_triggered, etc.)
+        from being reused for subsequent main events.
+
+        Args:
+            key: (view_angle, class_name) tuple
+            event_type: The event type that triggered this clear (for logging)
+        """
+        if key in self.object_states:
+            state = self.object_states[key]
+            current_time = time.time()
+            
+            # Reset movement flags but KEEP was_ever_moved=True
+            # This allows PRODUCT_PURCHASED to fire if object exits after timeout CART_ABANDONED
+            state.is_moved = False
+            # Note: was_ever_moved stays True so EXIT → PRODUCT_PURCHASED works
+            state.moved_time = None
+            
+            # Set cooldown to prevent immediate re-triggering (fixes the loop!)
+            state.last_cart_abandoned_time = current_time
+            
+            # Keep behavioral_state as CART_ABANDONED to prevent re-triggering MOVED
+            # The only valid next event should be EXIT (which checks was_ever_moved)
+            state.behavioral_state = BehavioralState.CART_ABANDONED
+            
+            print(f"  [Movement] Cleared atomic state for {key[1]} after {event_type} (cooldown started, was_ever_moved={state.was_ever_moved})")
+
+        # Also clear person proximity state
+        if key in self.person_proximity:
+            self.person_proximity[key] = {
+                'person_triggered': False,
+                'last_person_time': None,
+                'trigger_count': 0
+            }
+
+    # ==================== Person Proximity Tracking ====================
+    # For WINDOW_SHOPPED: tracks when a 'person' is detected near an object
+
+    def update_person_proximity(self, view_angle: int, object_class: str,
+                                object_bbox: Tuple[int, int, int, int],
+                                person_bbox: Optional[Tuple[int, int, int, int]],
+                                proximity_threshold_percent: float = 20.0) -> bool:
+        """
+        Update person proximity state for an object.
+
+        WINDOW_SHOPPED is triggered when:
+        - person_triggered goes True (person near object)
+        - person_triggered goes False (person leaves)
+        - Object then exits
+
+        Args:
+            view_angle: Camera view angle
+            object_class: The object class name (not 'person')
+            object_bbox: Object bounding box
+            person_bbox: Person bounding box (None if no person detected)
+            proximity_threshold_percent: Distance threshold as % of frame
+
+        Returns:
+            True if person_triggered state changed
+        """
+        key = (view_angle, object_class)
+        current_time = time.time()
+
+        # Initialize tracking if needed
+        if key not in self.person_proximity:
+            self.person_proximity[key] = {
+                'person_triggered': False,
+                'last_person_time': None,
+                'trigger_count': 0
+            }
+
+        prox_state = self.person_proximity[key]
+        was_triggered = prox_state['person_triggered']
+
+        if person_bbox is not None:
+            # Check if person is close to object
+            is_near = self._is_person_near_object(
+                object_bbox, person_bbox, proximity_threshold_percent
+            )
+
+            if is_near and not was_triggered:
+                # Person just arrived near object
+                prox_state['person_triggered'] = True
+                prox_state['last_person_time'] = current_time
+                prox_state['trigger_count'] += 1
+                print(f"  [Person] Person NEAR {object_class} -> person_triggered=True")
+                return True
+
+            # Person near but already triggered - no change
+            elif is_near and was_triggered:
+                pass  # Still near, no state change
+
+        else:
+            # No person detected
+            if was_triggered:
+                # Person was near, now gone -> WINDOW_SHOPPED
+                prox_state['person_triggered'] = False
+                print(f"  [Person] Person LEFT {object_class} -> WINDOW_SHOPPED")
+
+                # Get object state to build event
+                obj_key = (view_angle, object_class)
+                state = self.object_states.get(obj_key)
+
+                if state and not state.is_moved:
+                    # Only trigger WINDOW_SHOPPED if object wasn't moved
+                    current_time = time.time()
+                    event = {
+                        'type': 'WINDOW_SHOPPED',
+                        'object_id': state.object_id,
+                        'class_name': object_class,
+                        'view_angle': view_angle,
+                        'time_present_seconds': current_time - state.first_seen_time,
+                        'person_interaction_count': prox_state.get('trigger_count', 1),
+                        'timestamp': current_time
+                    }
+                    self.pending_events.append(event)
+                    state.behavioral_state = BehavioralState.WINDOW_SHOPPED
+
+                    # Clear atomic state to prevent reuse
+                    self._clear_atomic_state(obj_key)
+
+                return True
+
+        return False
+
+    def _is_person_near_object(self, object_bbox: Tuple[int, int, int, int],
+                               person_bbox: Tuple[int, int, int, int],
+                               threshold_percent: float) -> bool:
+        """
+        Check if person bounding box is near object bounding box.
+
+        Uses center-to-center distance.
+        """
+        obj_x, obj_y = self._get_bbox_center(object_bbox)
+        person_x, person_y = self._get_bbox_center(person_bbox)
+
+        dx = abs(obj_x - person_x)
+        dy = abs(obj_y - person_y)
+
+        threshold_x = self.frame_width * (threshold_percent / 100.0)
+        threshold_y = self.frame_height * (threshold_percent / 100.0)
+
+        return dx <= threshold_x and dy <= threshold_y
+
+    def get_person_proximity_state(self, view_angle: int, class_name: str) -> Optional[Dict]:
+        """Get person proximity state for an object"""
+        key = (view_angle, class_name)
+        return self.person_proximity.get(key)
+
+    def handle_exit_with_person(self, view_angle: int, class_name: str) -> Optional[Dict]:
+        """
+        Handle EXIT event - simplified logic.
+
+        New simplified logic:
+        - PURCHASED: ENTRY -> EXIT (any exit = purchased, object left the scene)
+        - WINDOW_SHOPPED: Fires immediately when person_triggered goes False (not on EXIT)
+
+        If WINDOW_SHOPPED already fired (behavioral_state == WINDOW_SHOPPED), don't emit PURCHASED.
+
+        Args:
+            view_angle: Camera view angle
+            class_name: Object class name
+
+        Returns:
+            Behavioral event dict, or None
+        """
+        key = (view_angle, class_name)
+
+        if key not in self.object_states:
+            return None
+
+        state = self.object_states[key]
+        current_time = time.time()
+
+        event = None
+
+        # Only fire PRODUCT_PURCHASED if object was actually moved
+        if state.is_moved or state.was_ever_moved:
+            # Object was moved and then exited -> PRODUCT_PURCHASED
+            state.behavioral_state = BehavioralState.PRODUCT_PURCHASED
+            event = {
+                'type': 'PRODUCT_PURCHASED',
+                'object_id': state.object_id,
+                'class_name': class_name,
+                'view_angle': view_angle,
+                'time_present_seconds': current_time - state.first_seen_time,
+                'was_moved': True,
+                'timestamp': current_time
+            }
+            print(f"  [Movement] {class_name} EXIT while moved -> PRODUCT_PURCHASED")
+        else:
+            # Object exited without being moved - no additional event
+            # (WINDOW_SHOPPED may have already fired when person left)
+            print(f"  [Movement] {class_name} EXIT without movement (no event)")
+
+        # Clean up person proximity tracking
+        if key in self.person_proximity:
+            del self.person_proximity[key]
+
+        # Remove object from tracking
+        del self.object_states[key]
+
+        return event
 
 
 def calculate_displacement_percent(bbox: Tuple[int, int, int, int],
@@ -496,54 +785,45 @@ if __name__ == "__main__":
     print(f"  is_moved: {state.is_moved}")
     print(f"  behavioral_state: {state.behavioral_state}")
 
-    # Test 4: Return to home
-    print("\n--- Test 4: Return to Home ---")
-    state = detector.update_position(
-        view_angle=90,
-        class_name="water_bottle",
-        bbox=(510, 310, 100, 200)  # Center at (560, 410) - back near home
-    )
-    print(f"  Current position: ({state.current_x}, {state.current_y})")
-    print(f"  is_moved: {state.is_moved}")
-    print(f"  was_ever_moved: {state.was_ever_moved}")
-    print(f"  behavioral_state: {state.behavioral_state}")
-
-    # Test 5: Exit without movement
-    print("\n--- Test 5: Exit After Return -> WINDOW_SHOPPED ---")
-    event = detector.handle_exit(view_angle=90, class_name="water_bottle")
+    # Test 4: Exit while moved -> PRODUCT_PURCHASED
+    print("\n--- Test 4: Exit While Moved -> PRODUCT_PURCHASED ---")
+    event = detector.handle_exit_with_person(view_angle=90, class_name="water_bottle")
     print(f"  Event: {event}")
 
-    # Test 6: New object - window shopping scenario
-    print("\n--- Test 6: Window Shopping Scenario ---")
+    # Test 5: New object - exit without movement -> PRODUCT_PURCHASED
+    print("\n--- Test 5: Exit Without Movement -> PRODUCT_PURCHASED ---")
     detector.register_object(90, "coffee_mug", 2, (100, 100, 80, 120))
-    # Small movements only
+    # Small movements only (within threshold)
     detector.update_position(90, "coffee_mug", (105, 105, 80, 120))
     detector.update_position(90, "coffee_mug", (110, 100, 80, 120))
-    event = detector.handle_exit(90, "coffee_mug")
+    event = detector.handle_exit_with_person(90, "coffee_mug")
     print(f"  Event: {event}")
 
-    # Test 7: Product purchased scenario
-    print("\n--- Test 7: Product Purchased Scenario ---")
+    # Test 6: CART_ABANDONED timeout scenario
+    print("\n--- Test 6: CART_ABANDONED Timeout ---")
     detector.register_object(90, "laptop", 3, (400, 200, 300, 200))
-    # Large movement
+    # Large movement (triggers isMoved=True)
     detector.update_position(90, "laptop", (800, 200, 300, 200))
-    # Exit while moved
-    event = detector.handle_exit(90, "laptop")
-    print(f"  Event: {event}")
+    print("  Object moved, waiting 5 seconds for timeout...")
+    import time as t
+    t.sleep(5)  # Wait for timeout
+    # Check for CART_ABANDONED
+    events = detector.check_cart_abandoned_timeouts()
+    print(f"  Timeout events: {events}")
 
-    # Test 8: Get pending events
-    print("\n--- Test 8: Pending Events ---")
+    # Test 7: Get pending events
+    print("\n--- Test 7: Pending Events ---")
     events = detector.get_pending_events()
     print(f"  Total events: {len(events)}")
     for e in events:
         print(f"    - {e['type']}: {e['class_name']}")
 
-    # Test 9: Change threshold
-    print("\n--- Test 9: Change Threshold ---")
+    # Test 8: Change threshold
+    print("\n--- Test 8: Change Threshold ---")
     detector.set_threshold(5.0)
 
     # Test standalone functions
-    print("\n--- Test 10: Standalone Functions ---")
+    print("\n--- Test 9: Standalone Functions ---")
     home = (500, 300, 100, 200)
     current = (700, 300, 100, 200)
     dx, dy = calculate_displacement_percent(current, home)

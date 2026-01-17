@@ -14,7 +14,7 @@ class RemoteGroundingDinoDetector:
     Compatible with backend.py's detector interface
     """
 
-    def __init__(self, classes, confidence=0.40, endpoint=None, model='grounding-dino-tiny',
+    def __init__(self, classes, confidence=0.60, endpoint=None, model='grounding-dino-tiny',
                  resize_width=1920, jpeg_quality=100):
         """
         Initialize remote Grounding DINO detector
@@ -35,7 +35,7 @@ class RemoteGroundingDinoDetector:
 
         # Default endpoint - can be overridden
         if endpoint is None:
-            self.endpoint = "https://q9fze78fypvkh2-8000.proxy.runpod.net/run"
+            self.endpoint = "https://flgftoueeze5a7-8000.proxy.runpod.net/run"
         else:
             self.endpoint = endpoint
 

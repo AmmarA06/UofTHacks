@@ -24,7 +24,7 @@ class GroundingDinoSystem:
 
     def __init__(self, detection_classes, endpoint=None, api_host="127.0.0.1", api_port=8000,
                  pan_tilt_port=None, ema_alpha=0.25,
-                 confidence=0.40, resize_width=1920, jpeg_quality=100,
+                 confidence=0.60, resize_width=1920, jpeg_quality=100,
                  movement_threshold=10.0):
         print("=" * 70)
         print("VISUAL DATABASE - GROUNDING DINO + DATABASE + API SERVER")
@@ -205,9 +205,23 @@ class GroundingDinoSystem:
         # Get current servo view angle
         current_view = self.current_pan
 
-        # Update view tracker - returns actions for each detection
+        # Inject person bbox into detections for proximity tracking (WINDOW_SHOPPED)
+        # Find the person detection if any
+        person_det = next((d for d in detections if d.get('class_name') == 'person'), None)
+        person_bbox = person_det.get('bbox') if person_det else None
+
+        # Add person_bbox to all non-person detections
+        # Filter out 'person' from detections - we only use it for proximity tracking, NOT database
+        non_person_detections = []
+        for det in detections:
+            if det.get('class_name') == 'person':
+                continue  # Skip person - don't add to database
+            det['person_bbox'] = person_bbox
+            non_person_detections.append(det)
+
+        # Update view tracker - returns actions for each detection (excluding person)
         # Tracker will use last known position for detections without depth
-        tracker_actions = self.view_tracker.update(current_view, detections)
+        tracker_actions = self.view_tracker.update(current_view, non_person_detections)
 
         # Process actions from tracker
         for det, action, object_id in tracker_actions:
@@ -270,6 +284,9 @@ class GroundingDinoSystem:
         pending_absent = self.view_tracker.get_pending_absent_marks()
         for view_angle, class_name, object_id in pending_absent:
             self.db.mark_object_absent(object_id)
+
+        # Check for CART_ABANDONED timeouts (objects moved for 4+ seconds without EXIT)
+        self.view_tracker.check_cart_abandoned_timeouts()
 
         # Process behavioral events (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
         behavioral_events = self.view_tracker.get_pending_behavioral_events()
@@ -716,8 +733,8 @@ Examples:
     # Detection classes
     parser.add_argument('--classes', nargs='+', default=None,
                         help='Classes to detect (default: load from database)')
-    parser.add_argument('--confidence', type=float, default=0.40,
-                        help='Detection confidence threshold (default: 0.40)')
+    parser.add_argument('--confidence', type=float, default=0.60,
+                        help='Detection confidence threshold (default: 0.60)')
     parser.add_argument('--endpoint', default=None,
                         help='RunPod endpoint URL (default: from detector)')
 
