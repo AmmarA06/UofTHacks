@@ -211,13 +211,17 @@ class GroundingDinoSystem:
         person_bbox = person_det.get('bbox') if person_det else None
 
         # Add person_bbox to all non-person detections
+        # Filter out 'person' from detections - we only use it for proximity tracking, NOT database
+        non_person_detections = []
         for det in detections:
-            if det.get('class_name') != 'person':
-                det['person_bbox'] = person_bbox
+            if det.get('class_name') == 'person':
+                continue  # Skip person - don't add to database
+            det['person_bbox'] = person_bbox
+            non_person_detections.append(det)
 
-        # Update view tracker - returns actions for each detection
+        # Update view tracker - returns actions for each detection (excluding person)
         # Tracker will use last known position for detections without depth
-        tracker_actions = self.view_tracker.update(current_view, detections)
+        tracker_actions = self.view_tracker.update(current_view, non_person_detections)
 
         # Process actions from tracker
         for det, action, object_id in tracker_actions:
