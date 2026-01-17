@@ -27,17 +27,17 @@ export function Modal({ isOpen, onClose, title, children, footer, className }) {
 
             {/* Modal */}
             <div className={clsx(
-                "relative bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden",
+                "relative bg-background-elevated rounded-lg shadow-2xl border border-border w-full max-w-lg max-h-[90vh] overflow-hidden",
                 "animate-in fade-in zoom-in-95 duration-200",
                 className
             )}>
                 {/* Header */}
                 {title && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background-subtle">
+                        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
                         <button
                             onClick={onClose}
-                            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                            className="p-1 text-foreground-muted hover:text-foreground hover:bg-background-hover rounded-md transition-colors"
                         >
                             <X size={20} />
                         </button>
@@ -45,13 +45,13 @@ export function Modal({ isOpen, onClose, title, children, footer, className }) {
                 )}
 
                 {/* Content */}
-                <div className="px-6 py-4 overflow-y-auto max-h-[60vh]">
+                <div className="px-6 py-4 overflow-y-auto max-h-[60vh] bg-background-elevated">
                     {children}
                 </div>
 
                 {/* Footer */}
                 {footer && (
-                    <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                    <div className="px-6 py-4 border-t border-border bg-background-subtle">
                         {footer}
                     </div>
                 )}

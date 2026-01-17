@@ -8,7 +8,7 @@ import {
   Stars
 } from '@react-three/drei';
 import { ObjectMarker } from './ObjectMarker';
-import { Camera, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
+import { Camera, RotateCcw } from 'lucide-react';
 import * as THREE from 'three';
 
 // Camera preset positions
@@ -21,7 +21,7 @@ const CAMERA_PRESETS = {
 };
 
 // Animated camera transition and WASD controls
-function CameraController({ targetPosition, targetControls, onComplete, controlsRef }) {
+function CameraController({ targetPosition, targetControls, onComplete, controlsRef, onCameraUpdate }) {
   const { camera } = useThree();
   const keysPressed = useRef({});
 
@@ -155,6 +155,11 @@ function CameraController({ targetPosition, targetControls, onComplete, controls
 
     // Update controls
     controlsRef.current.update();
+
+    // Report camera position for display
+    if (onCameraUpdate) {
+      onCameraUpdate(camera.position);
+    }
   });
 
   return null;
@@ -164,11 +169,20 @@ export function Scene3D({ objects }) {
   const [cameraTarget, setCameraTarget] = useState(null);
   const [controlsTarget, setControlsTarget] = useState(null);
   const [currentPreset, setCurrentPreset] = useState('default');
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cameraInfo, setCameraInfo] = useState('');
   const controlsRef = useRef();
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  const getCameraOrientation = (position) => {
+    const x = position.x;
+    const y = position.y;
+    const z = position.z;
+
+    // Calculate angles
+    const distanceXZ = Math.sqrt(x * x + z * z);
+    const elevationAngle = Math.atan2(y, distanceXZ) * (180 / Math.PI);
+    const azimuthAngle = Math.atan2(x, z) * (180 / Math.PI);
+
+    return `${elevationAngle.toFixed(0)}° elev • ${azimuthAngle.toFixed(0)}° azim`;
   };
 
   const switchCamera = (presetName) => {
@@ -184,13 +198,13 @@ export function Scene3D({ objects }) {
   };
 
   return (
-    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50' : 'w-full h-[600px]'} bg-background-elevated rounded-lg border border-border overflow-hidden transition-all duration-300`}>
-      {/* Control Panel */}
+    <div className="relative w-full h-[600px] bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 rounded-lg overflow-hidden transition-all duration-300">
+      {/* Control Panel - Left Side */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
         {/* Camera Presets */}
-        <div className="bg-background-elevated/90 backdrop-blur-md border border-border rounded-lg p-2 shadow-lg">
-          <div className="text-xs text-foreground-subtle mb-2 px-2 font-semibold uppercase tracking-wide flex items-center gap-1">
-            <Camera className="w-3 h-3" />
+        <div className="bg-white/95 backdrop-blur-md border border-border rounded-lg p-2 shadow-md">
+          <div className="text-xs text-foreground-muted mb-2 px-2 font-semibold uppercase tracking-wide flex items-center gap-1">
+            <Camera className="w-3 h-3 text-accent" />
             Camera
           </div>
           <div className="flex flex-col gap-1">
@@ -200,8 +214,8 @@ export function Scene3D({ objects }) {
                 onClick={() => switchCamera(key)}
                 className={`px-3 py-1.5 text-xs rounded transition-all ${
                   currentPreset === key
-                    ? 'bg-accent text-white font-semibold shadow-lg shadow-accent/20'
-                    : 'bg-background-hover text-foreground-muted hover:text-foreground hover:bg-background'
+                    ? 'bg-gradient-to-r from-accent to-accent-light text-white font-semibold shadow-md'
+                    : 'bg-background-hover text-foreground-muted hover:text-foreground hover:bg-background-subtle'
                 }`}
               >
                 {preset.name}
@@ -213,38 +227,25 @@ export function Scene3D({ objects }) {
         {/* Reset Button */}
         <button
           onClick={resetCamera}
-          className="bg-background-elevated/90 backdrop-blur-md border border-border rounded-lg p-2.5 shadow-lg hover:border-accent/50 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+          className="bg-white/95 backdrop-blur-md border border-border rounded-lg p-2.5 shadow-md hover:border-accent transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
           title="Reset Camera (R)"
         >
-          <RotateCcw className="w-4 h-4 text-foreground" />
+          <RotateCcw className="w-4 h-4 text-accent" />
           <span className="text-xs font-semibold text-foreground">Reset</span>
         </button>
       </div>
 
-      {/* Controls Hint */}
-      <div className="absolute bottom-4 right-4 z-10 bg-background-elevated/90 backdrop-blur-md border border-border rounded-lg px-3 py-2 shadow-lg">
-        <div className="text-xs text-foreground-subtle font-medium">
+      {/* Controls Hint - Bottom Right */}
+      <div className="absolute bottom-4 right-4 z-10 bg-white/95 backdrop-blur-md border border-border rounded-lg px-3 py-2 shadow-md">
+        <div className="text-xs text-foreground-muted font-medium">
           <span className="font-bold text-accent">WASD</span> to move • <span className="font-bold text-accent">Arrows</span> to look • <span className="font-bold text-accent">Mouse</span> to orbit
         </div>
       </div>
 
-      {/* Fullscreen Toggle */}
-      <button
-        onClick={toggleFullscreen}
-        className="absolute top-4 right-4 z-10 p-2 bg-background-elevated/90 backdrop-blur-md border border-border rounded-lg hover:border-accent/50 transition-all hover:scale-110 active:scale-95 shadow-lg"
-        title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-      >
-        {isFullscreen ? (
-          <Minimize2 className="w-5 h-5 text-foreground" />
-        ) : (
-          <Maximize2 className="w-5 h-5 text-foreground" />
-        )}
-      </button>
-
-      {/* Stats Display */}
-      <div className="absolute bottom-4 left-4 z-10 bg-background-elevated/90 backdrop-blur-md border border-border rounded-lg px-4 py-2 shadow-lg">
-        <div className="text-xs text-foreground-subtle">
-          <span className="font-semibold text-accent">{objects.length}</span> object{objects.length !== 1 ? 's' : ''} visible
+      {/* Camera Orientation - Bottom Left */}
+      <div className="absolute bottom-4 left-4 z-10 bg-white/90 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-1.5 shadow-sm">
+        <div className="text-xs text-foreground-subtle font-mono">
+          {cameraInfo || 'Camera view'}
         </div>
       </div>
 
@@ -254,6 +255,7 @@ export function Scene3D({ objects }) {
           targetPosition={cameraTarget}
           targetControls={controlsTarget}
           controlsRef={controlsRef}
+          onCameraUpdate={(pos) => setCameraInfo(getCameraOrientation(pos))}
         />
         <OrbitControls
           ref={controlsRef}
@@ -284,56 +286,29 @@ export function Scene3D({ objects }) {
           speed={0.5}
         />
 
-        {/* Multiple Grid Planes for better visibility */}
-        {/* XY Plane (horizontal - ground) */}
+        {/* Ground Grid - Horizontal plane */}
         <Grid
           position={[0, 0, 0]}
           args={[20, 20]}
-          cellSize={0.2}
-          cellThickness={0.5}
-          cellColor="#222222"
-          sectionSize={1}
-          sectionThickness={1.0}
+          cellSize={0.5}
+          cellThickness={0.6}
+          cellColor="#333333"
+          sectionSize={2}
+          sectionThickness={1.2}
           sectionColor="#0070f3"
-          fadeDistance={30}
-          fadeStrength={1}
+          fadeDistance={25}
+          fadeStrength={2}
           infiniteGrid
         />
 
-        {/* YZ Plane (vertical - side wall) for side/front views */}
-        <Grid
-          position={[0, 0, 0]}
-          args={[20, 20]}
-          cellSize={0.2}
-          cellThickness={0.3}
-          cellColor="#1a1a1a"
-          sectionSize={1}
-          sectionThickness={0.7}
-          sectionColor="#004080"
-          fadeDistance={30}
-          fadeStrength={1}
-          rotation={[0, 0, Math.PI / 2]}
-          infiniteGrid
-        />
+        {/* Enhanced Axes Helper - Larger and more visible */}
+        <axesHelper args={[5]} />
 
-        {/* XZ Plane (vertical - back wall) for top/bottom views */}
-        <Grid
-          position={[0, 0, 0]}
-          args={[20, 20]}
-          cellSize={0.2}
-          cellThickness={0.3}
-          cellColor="#1a1a1a"
-          sectionSize={1}
-          sectionThickness={0.7}
-          sectionColor="#004080"
-          fadeDistance={30}
-          fadeStrength={1}
-          rotation={[Math.PI / 2, 0, 0]}
-          infiniteGrid
-        />
-
-        {/* Axes Helper */}
-        <axesHelper args={[3]} />
+        {/* Origin marker - small sphere at center */}
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[0.08, 16, 16]} />
+          <meshStandardMaterial color="#ffffff" emissive="#0070f3" emissiveIntensity={0.5} />
+        </mesh>
 
         {/* Objects */}
         {objects.map((object) => (

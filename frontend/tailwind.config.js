@@ -8,26 +8,43 @@ export default {
         extend: {
             colors: {
                 background: {
-                    DEFAULT: '#ffffff',
-                    elevated: 'rgba(255, 255, 255, 0.8)',
-                    hover: '#f8fafc',
+                    DEFAULT: '#f0f4f8',        // Light blue-gray base
+                    elevated: '#ffffff',       // Pure white for cards
+                    hover: '#e3e9f0',          // Blue-tinted hover
+                    subtle: '#e8eff6',         // Subtle blue backgrounds
+                    card: '#fafbfd',           // Very light blue card
+                    table: '#f5f8fb',          // Table rows alternate
+                    panel: '#f7f9fc',          // Panel backgrounds
+                    accent: '#eff6ff',         // Light blue accent areas
                 },
                 foreground: {
-                    DEFAULT: '#0f172a',
-                    muted: '#64748b',
-                    subtle: '#94a3b8',
+                    DEFAULT: '#1e293b',        // Darker text for better contrast
+                    muted: '#475569',          // Muted text (darker)
+                    subtle: '#64748b',         // Subtle text
                 },
                 border: {
-                    DEFAULT: '#e2e8f0',
-                    hover: '#cbd5e1',
+                    DEFAULT: '#cbd5e1',        // More visible borders
+                    hover: '#94a3b8',          // Darker on hover
+                    strong: '#64748b',         // Strong borders
+                    light: '#e2e8f0',          // Light borders
+                    accent: '#bfdbfe',         // Light blue borders
                 },
                 accent: {
                     DEFAULT: '#0070f3',
                     hover: '#0761d1',
+                    light: '#3b82f6',
+                    subtle: '#dbeafe',
+                    bg: '#eff6ff',             // Light accent background
+                    border: '#93c5fd',         // Light blue border
                 },
-                success: '#00c853',
-                warning: '#ffa726',
-                error: '#f44336',
+                purple: {
+                    light: '#f3e8ff',
+                    DEFAULT: '#a855f7',
+                    dark: '#7e22ce',
+                },
+                success: '#10b981',
+                warning: '#f59e0b',
+                error: '#ef4444',
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],

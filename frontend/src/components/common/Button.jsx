@@ -1,10 +1,10 @@
 import { clsx } from 'clsx';
 
 const variants = {
-    primary: "bg-black text-white hover:bg-gray-800 border-transparent",
-    secondary: "bg-white text-gray-900 border-gray-200 hover:bg-gray-50 hover:border-gray-300",
-    danger: "bg-red-600 text-white hover:bg-red-700 border-transparent",
-    ghost: "bg-transparent text-gray-600 hover:bg-gray-100 border-transparent",
+    primary: "bg-accent text-white hover:bg-accent-hover border-transparent shadow-sm hover:shadow",
+    secondary: "bg-background-elevated text-foreground border-border hover:bg-background-hover hover:border-border-strong shadow-sm",
+    danger: "bg-error text-white hover:bg-red-700 border-transparent shadow-sm hover:shadow",
+    ghost: "bg-transparent text-foreground-muted hover:bg-background-hover hover:text-foreground border-transparent",
 };
 
 export function Button({
@@ -19,7 +19,7 @@ export function Button({
             className={clsx(
                 "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border",
                 "transition-all duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-blue-500/20",
+                "focus:outline-none focus:ring-2 focus:ring-accent/20",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 variants[variant],
                 className

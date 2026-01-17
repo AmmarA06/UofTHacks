@@ -9,25 +9,11 @@ const CATEGORY_OPTIONS = [
   'personal',
   'accessories',
   'tools',
-  'other',
-];
-
-const ICON_OPTIONS = [
-  'laptop',
-  'mouse',
-  'keyboard',
-  'monitor',
-  'phone',
-  'tablet',
-  'coffee',
-  'mug',
-  'bottle',
-  'pen',
-  'notebook',
-  'headphones',
-  'wallet',
-  'keys',
-  'box',
+  'food & drink',
+  'home',
+  'wearables',
+  'audio',
+  'general',
   'other',
 ];
 
@@ -36,7 +22,6 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
     name: '',
     category: '',
     color: '#45b7d1',
-    icon: '',
     description: '',
     confidence_override: '',
     distance_threshold: '',
@@ -50,7 +35,6 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
         name: initialData.name || '',
         category: initialData.category || '',
         color: initialData.color || '#45b7d1',
-        icon: initialData.icon || '',
         description: initialData.description || '',
         confidence_override: initialData.confidence_override || '',
         distance_threshold: initialData.distance_threshold || '',
@@ -78,7 +62,6 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
       name: formData.name.trim(),
       category: formData.category || null,
       color: formData.color || null,
-      icon: formData.icon || null,
       description: formData.description.trim() || null,
       is_active: true, // Always set new/updated classes as active
     };
@@ -121,7 +104,7 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
           value={formData.category}
           onChange={handleChange}
           disabled={loading}
-          className="bg-background-elevated border border-border rounded-md px-3 py-2 text-foreground w-full focus:border-accent focus:outline-none transition-colors"
+          className="bg-background-elevated border-2 border-border rounded-lg px-3 py-2 text-foreground w-full focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all shadow-sm"
         >
           <option value="">Select category...</option>
           {CATEGORY_OPTIONS.map((cat) => (
@@ -144,7 +127,7 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
             value={formData.color}
             onChange={handleChange}
             disabled={loading}
-            className="w-12 h-10 rounded-md border border-border cursor-pointer"
+            className="w-12 h-10 rounded-lg border-2 border-border cursor-pointer shadow-sm"
           />
           <Input
             name="color"
@@ -157,27 +140,6 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
         </div>
       </div>
 
-      {/* Icon */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1">
-          Icon
-        </label>
-        <select
-          name="icon"
-          value={formData.icon}
-          onChange={handleChange}
-          disabled={loading}
-          className="bg-background-elevated border border-border rounded-md px-3 py-2 text-foreground w-full focus:border-accent focus:outline-none transition-colors"
-        >
-          <option value="">Select icon...</option>
-          {ICON_OPTIONS.map((icon) => (
-            <option key={icon} value={icon}>
-              {icon.charAt(0).toUpperCase() + icon.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-1">
@@ -187,10 +149,10 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
           name="description"
           value={formData.description}
           onChange={handleChange}
-          placeholder="Optional description..."
+          placeholder="Describe this class (optional)..."
           disabled={loading}
           rows={3}
-          className="bg-background-elevated border border-border rounded-md px-3 py-2 text-foreground w-full focus:border-accent focus:outline-none transition-colors placeholder:text-foreground-subtle resize-none"
+          className="bg-background-elevated border-2 border-border rounded-lg px-3 py-2 text-foreground w-full focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all shadow-sm placeholder:text-foreground-subtle resize-none"
         />
       </div>
 
@@ -250,8 +212,8 @@ export function ClassForm({ initialData, onSubmit, onCancel, loading }) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={loading || !formData.name.trim()}>
+      <div className="flex gap-3 pt-4">
+        <Button type="submit" variant="primary" disabled={loading || !formData.name.trim()}>
           {loading ? 'Saving...' : initialData ? 'Update Class' : 'Create Class'}
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>

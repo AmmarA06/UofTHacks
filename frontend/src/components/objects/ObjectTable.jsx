@@ -4,9 +4,7 @@ import { formatTimeAgo, formatConfidence, formatPosition } from '@/utils/formatt
 import { getClassColor } from '@/utils/colors';
 import { groupsAPI } from '@/api/endpoints';
 import {
-  Trash2,
   Check,
-  Eye,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
@@ -119,7 +117,7 @@ export function ObjectTable({ objects, loading, error, onDelete, onView, selecte
 
   if (objects.length === 0) {
     return (
-      <div className="text-center py-12 bg-background-elevated border border-border rounded-lg">
+      <div className="text-center py-12 bg-background-table border-2 border-border rounded-lg shadow-md">
         <Package size={48} className="mx-auto text-foreground-subtle mb-4" />
         <p className="text-foreground-muted text-lg font-medium">No objects found</p>
         <p className="text-foreground-subtle text-sm mt-2">
@@ -160,12 +158,12 @@ export function ObjectTable({ objects, loading, error, onDelete, onView, selecte
   );
 
   return (
-    <div className="bg-background-elevated border border-border rounded-lg overflow-hidden shadow-sm">
+    <div className="bg-background-table border-2 border-border rounded-lg overflow-hidden shadow-md">
       {/* Table wrapper with horizontal scroll */}
       <div className="overflow-x-auto">
         <table className="w-full">
           {/* Table header */}
-          <thead className="bg-background-hover border-b border-border">
+          <thead className="bg-background-subtle border-b-2 border-border">
             <tr className="text-sm font-semibold text-foreground">
               <th className="px-4 py-3 text-left w-12">
                 <Check size={16} className="opacity-50" />
@@ -197,7 +195,6 @@ export function ObjectTable({ objects, loading, error, onDelete, onView, selecte
               <th className="px-4 py-3 text-left">
                 <SortableHeader column="last_seen">Last Seen</SortableHeader>
               </th>
-              <th className="px-4 py-3 text-right w-24">Actions</th>
             </tr>
           </thead>
 
@@ -221,13 +218,13 @@ export function ObjectTable({ objects, loading, error, onDelete, onView, selecte
                     {onSelect && (
                       <button
                         onClick={(e) => handleSelectToggle(e, object.object_id)}
-                        className={`p-1 rounded transition-all ${
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                           isSelected
-                            ? 'bg-accent text-white'
-                            : 'hover:bg-background text-foreground-muted'
+                            ? 'bg-accent border-accent'
+                            : 'border-gray-300 hover:border-accent bg-white'
                         }`}
                       >
-                        <Check size={16} />
+                        {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
                       </button>
                     )}
                   </td>
@@ -282,12 +279,12 @@ export function ObjectTable({ objects, loading, error, onDelete, onView, selecte
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                         object.is_present
                           ? 'bg-success/10 text-success'
-                          : 'bg-foreground-subtle/10 text-foreground-subtle'
+                          : 'bg-error/10 text-error'
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          object.is_present ? 'bg-success' : 'bg-foreground-subtle'
+                          object.is_present ? 'bg-success' : 'bg-error'
                         }`}
                       />
                       {object.is_present ? 'Present' : 'Absent'}
@@ -333,28 +330,6 @@ export function ObjectTable({ objects, loading, error, onDelete, onView, selecte
                     <span className="text-sm text-foreground-muted whitespace-nowrap">
                       {formatTimeAgo(object.last_seen)}
                     </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleView(object)}
-                        className="p-1.5 hover:bg-background rounded transition-colors text-foreground-muted hover:text-foreground"
-                        title="View details"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      {onDelete && (
-                        <button
-                          onClick={(e) => handleDelete(e, object.object_id)}
-                          className="p-1.5 hover:bg-error/10 hover:text-error rounded transition-colors text-foreground-muted"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
                   </td>
                 </tr>
               );

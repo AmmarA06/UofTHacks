@@ -3,67 +3,61 @@ import { Edit2, Trash2, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export function ClassCard({ classData, stats, onEdit, onDelete, onViewObjects }) {
-    const classColor = getClassColor(classData.class_name);
-    const objectCount = stats?.total_objects || 0;
+    // Use the color from classData, fallback to getClassColor if not set
+    const classColor = classData.color || getClassColor(classData.class_name);
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-100">
-                <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: classColor }}
-                        />
-                        <div>
-                            <h3 className="text-base font-semibold text-gray-900 capitalize leading-snug">
-                                {classData.name || classData.class_name || 'Unknown Class'}
-                            </h3>
-                            <p className="text-xs text-gray-500 mt-0.5 capitalize">
-                                {classData.category || classData.name || classData.class_name || 'Uncategorized'}
-                            </p>
-                        </div>
-                    </div>
+        <div className="bg-gradient-to-br from-background-elevated to-background-card rounded-lg border border-border overflow-hidden shadow-sm hover:shadow-md hover:border-border-hover transition-all duration-200 relative">
+            {/* Subtle color accent based on class color */}
+            <div
+                className="absolute top-0 right-0 w-24 h-24 opacity-10 rounded-bl-full"
+                style={{ backgroundColor: classColor }}
+            />
 
-                    <div className="flex items-center gap-1">
-                        {classData.is_active ? (
-                            <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                                <ToggleRight size={14} />
-                                Active
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                <ToggleLeft size={14} />
-                                Inactive
-                            </span>
-                        )}
+            {/* Header */}
+            <div className="p-5 border-b border-border bg-background-subtle relative z-10">
+                <div className="flex items-center gap-3">
+                    <div
+                        className="w-8 h-8 rounded-lg flex-shrink-0 shadow-md"
+                        style={{
+                            backgroundColor: classColor
+                        }}
+                    />
+                    <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-foreground capitalize leading-snug">
+                            {classData.name || classData.class_name || 'Unknown Class'}
+                        </h3>
                     </div>
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="px-4 py-3 bg-gray-50/50">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                        <div className="text-xl font-bold text-gray-900">{objectCount}</div>
-                        <div className="text-xs text-gray-500">Objects</div>
+            {/* Content - Category and Description */}
+            <div className="px-5 py-4 bg-background-elevated relative z-10 space-y-4">
+                <div>
+                    <div className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-1.5">
+                        Category
                     </div>
-                    <div>
-                        <div className="text-xl font-bold text-gray-900">
-                            {stats?.avg_confidence ? `${(stats.avg_confidence * 100).toFixed(0)}%` : '—'}
-                        </div>
-                        <div className="text-xs text-gray-500">Avg Confidence</div>
+                    <div className="text-sm text-foreground capitalize font-medium">
+                        {classData.category || <span className="text-foreground-subtle italic font-normal">No category set</span>}
+                    </div>
+                </div>
+
+                <div>
+                    <div className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-1.5">
+                        Description
+                    </div>
+                    <div className="text-sm text-foreground leading-relaxed">
+                        {classData.description || <span className="text-foreground-subtle italic">No description provided</span>}
                     </div>
                 </div>
             </div>
 
             {/* Actions */}
-            <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
+            <div className="px-5 py-3 border-t border-border bg-background-subtle flex items-center justify-end gap-2 relative z-10">
                 {onViewObjects && (
                     <button
                         onClick={() => onViewObjects(classData.class_name)}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="p-1.5 text-foreground-muted hover:text-accent hover:bg-accent/10 rounded transition-colors"
                         title="View objects"
                     >
                         <Eye size={16} />
@@ -72,7 +66,7 @@ export function ClassCard({ classData, stats, onEdit, onDelete, onViewObjects })
                 {onEdit && (
                     <button
                         onClick={() => onEdit(classData)}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1.5 text-foreground-muted hover:text-foreground hover:bg-background-hover rounded transition-colors"
                         title="Edit"
                     >
                         <Edit2 size={16} />
@@ -81,7 +75,7 @@ export function ClassCard({ classData, stats, onEdit, onDelete, onViewObjects })
                 {onDelete && (
                     <button
                         onClick={() => onDelete(classData.class_id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        className="p-1.5 text-foreground-muted hover:text-error hover:bg-error/10 rounded transition-colors"
                         title="Delete"
                     >
                         <Trash2 size={16} />

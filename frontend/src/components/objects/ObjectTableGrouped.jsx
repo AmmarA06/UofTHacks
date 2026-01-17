@@ -8,9 +8,7 @@ import { StatusBadge } from '../common/StatusBadge';
 import { ConfidencePill } from '../common/ConfidencePill';
 import { clsx } from 'clsx';
 import {
-  Trash2,
   Check,
-  Maximize2,
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
@@ -19,7 +17,6 @@ import {
   Table2,
   ChevronDown,
   ChevronRight,
-  FolderInput,
   X
 } from 'lucide-react';
 
@@ -124,9 +121,7 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
 
   const actions = {
     handleSelectToggle: (e, key) => { e.stopPropagation(); onSelect && onSelect(key); },
-    handleDelete: (e, objectId) => { e.stopPropagation(); onDelete && onDelete(objectId); },
     handleView: (object) => onView && onView(object),
-    handleAssignToTable: (e, objectId) => { e.stopPropagation(); setObjectsToAssign([objectId]); setAssignmentModalOpen(true); },
     handleBulkAssign: () => {
       const objectIds = [...new Set(selectedObjects.map(k => parseInt(k.split('-').pop())))];
       setObjectsToAssign(objectIds);
@@ -169,7 +164,7 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
         onClick={() => actions.handleView(object)}
         className={clsx(
           "hover:bg-gray-50 cursor-pointer transition-colors group",
-          isSelected ? 'bg-blue-50/50' : ''
+          isSelected ? 'bg-accent/5' : ''
         )}
       >
         <td className="px-4 py-3">
@@ -177,11 +172,11 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
             <button
               onClick={(e) => actions.handleSelectToggle(e, selectionKey)}
               className={clsx(
-                "w-4 h-4 rounded border flex items-center justify-center transition-all",
-                isSelected ? 'bg-blue-600 border-blue-600' : 'border-gray-300 hover:border-blue-400'
+                "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                isSelected ? 'bg-accent border-accent' : 'border-gray-300 hover:border-accent bg-white'
               )}
             >
-              {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+              {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
             </button>
           )}
         </td>
@@ -205,7 +200,7 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
 
         <td className="px-4 py-3">
           <StatusBadge
-            status={object.is_present ? 'success' : 'neutral'}
+            status={object.is_present ? 'success' : 'error'}
             text={object.is_present ? 'Present' : 'Absent'}
           />
         </td>
@@ -220,7 +215,7 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
           {groups.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {groups.filter(g => !g.group_name.startsWith('Table ')).slice(0, 2).map((group) => (
-                <span key={group.group_id} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded border border-blue-100">
+                <span key={group.group_id} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-accent/10 text-accent text-[10px] font-medium rounded border border-accent/20">
                   <Tag size={10} />
                   {group.group_name}
                 </span>
@@ -235,14 +230,6 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
         <td className="px-4 py-3">
           <span className="text-sm text-gray-500 whitespace-nowrap">{formatTimeAgo(object.last_seen)}</span>
         </td>
-
-        <td className="px-4 py-3">
-          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={(e) => actions.handleAssignToTable(e, object.object_id)} className="p-1.5 hover:bg-gray-100 hover:text-blue-600 rounded text-gray-400" title="Assign to table"><FolderInput size={16} /></button>
-            <button onClick={() => actions.handleView(object)} className="p-1.5 hover:bg-gray-100 hover:text-black rounded text-gray-400" title="View details"><Maximize2 size={16} /></button>
-            {onDelete && <button onClick={(e) => actions.handleDelete(e, object.object_id)} className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded text-gray-400" title="Delete"><Trash2 size={16} /></button>}
-          </div>
-        </td>
       </tr>
     );
   };
@@ -251,9 +238,9 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
     <div className="space-y-6">
       {/* Bulk actions */}
       {selectedObjects?.length > 0 && (
-        <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between shadow-sm animate-in slide-in-from-top-2">
-          <span className="text-blue-900 font-medium text-sm">{selectedObjects.length} object(s) selected</span>
-          <button onClick={actions.handleBulkAssign} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm transition-all"><FolderInput size={16} /> Assign to Table</button>
+        <div className="bg-accent/10 border border-accent/20 rounded-lg px-4 py-3 flex items-center justify-between shadow-sm animate-in slide-in-from-top-2">
+          <span className="text-accent font-medium text-sm">{selectedObjects.length} object(s) selected</span>
+          <button onClick={actions.handleBulkAssign} className="flex items-center gap-2 px-3 py-1.5 bg-accent text-white rounded-md text-sm font-medium hover:bg-accent-hover shadow-sm transition-all"><Table2 size={16} /> Assign to Table</button>
         </div>
       )}
 
@@ -269,7 +256,7 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
                   <button className="text-gray-400 hover:text-gray-600 transition-colors transform duration-200">
                     {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
                   </button>
-                  <Table2 size={18} className="text-blue-500" />
+                  <Table2 size={18} className="text-accent" />
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">{group.group_name}</h3>
                   <span className="text-xs font-medium text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full">{tableObjects.length}</span>
                 </div>
@@ -291,7 +278,6 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
                         <th className="px-4 py-3 text-left"><SortableHeader column="position">Position</SortableHeader></th>
                         <th className="px-4 py-3 text-left"><div className="flex items-center gap-1.5"><Tag size={14} /><span>Groups</span></div></th>
                         <th className="px-4 py-3 text-left"><SortableHeader column="last_seen">Last Seen</SortableHeader></th>
-                        <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -325,7 +311,6 @@ export function ObjectTableGrouped({ objects, loading, error, onDelete, onView, 
                   <th className="px-4 py-3 text-left"><SortableHeader column="position">Position</SortableHeader></th>
                   <th className="px-4 py-3 text-left"><div className="flex items-center gap-1.5"><Tag size={14} /><span>Groups</span></div></th>
                   <th className="px-4 py-3 text-left"><SortableHeader column="last_seen">Last Seen</SortableHeader></th>
-                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">

@@ -14,22 +14,22 @@ export function Card({
     // Base styles
     'relative rounded-lg p-6 transition-all duration-300',
 
-    // Background and border
+    // Background and border with shadow
     glass
-      ? 'bg-background-elevated/80 backdrop-blur-xl border border-border/50'
-      : 'bg-background-elevated border border-border',
+      ? 'bg-gradient-to-br from-background-elevated/98 via-background-card/98 to-background-elevated/98 backdrop-blur-xl border border-accent-border shadow-sm'
+      : 'bg-gradient-to-br from-background-elevated to-background-card border border-border shadow-sm',
 
     // Hover effects
     hover && [
       'cursor-pointer',
-      'hover:border-accent/50',
-      'hover:shadow-lg hover:shadow-accent/10',
-      'hover:scale-[1.02]',
-      'active:scale-[0.98]'
+      'hover:border-border-hover',
+      'hover:shadow-md',
+      'hover:scale-[1.01]',
+      'active:scale-[0.99]'
     ],
 
     // Glow effect
-    glow && 'shadow-xl shadow-accent/5',
+    glow && 'shadow-md shadow-accent/10 border-accent-border',
 
     // Custom className
     className

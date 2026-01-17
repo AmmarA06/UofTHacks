@@ -6,50 +6,58 @@ export function Navbar() {
     const location = useLocation();
 
     const navItems = [
-        { path: '/', label: 'Overview', icon: Home }, // Renamed Dashboard to Overview for that Vercel feel
+        { path: '/', label: 'Overview', icon: Home },
         { path: '/objects', label: 'Objects', icon: Box },
         { path: '/classes', label: 'Classes', icon: Tags },
-        { path: '/spatial', label: 'Spatial View', icon: Boxes }, // Renamed to Spatial View
+        { path: '/spatial', label: 'Spatial View', icon: Boxes },
     ];
 
     return (
-        <nav className="h-16 border-b border-gray-200/60 bg-white/70 backdrop-blur-xl sticky top-0 z-50 w-full transition-all duration-300 supports-[backdrop-filter]:bg-white/60">
+        <nav className="h-16 border-b border-border bg-background-elevated/95 backdrop-blur-xl sticky top-0 z-50 w-full transition-all duration-300 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
                 <div className="flex items-center justify-between h-full">
                     {/* Logo Section */}
-                    <div className="flex items-center gap-8">
-                        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <div className="bg-black text-white p-1 rounded-md">
-                                <Database size={20} />
+                    <div className="flex items-center gap-10">
+                        <Link to="/" className="flex items-center gap-2.5 group">
+                            <div className="bg-gradient-to-br from-accent via-accent to-accent-hover text-white p-2 rounded-lg shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-105">
+                                <Database size={18} strokeWidth={2.5} />
                             </div>
-                            <span className="font-bold text-lg tracking-tight text-black">VisualDB</span>
+                            <span className="font-bold text-xl tracking-tight text-foreground group-hover:text-accent transition-colors">
+                                VisualDB
+                            </span>
                         </Link>
 
-                        {/* Navigation Links - Left Aligned next to logo like Vercel */}
-                        <div className="hidden md:flex items-center gap-6">
+                        {/* Navigation Links */}
+                        <div className="hidden md:flex items-center gap-1">
                             {navItems.map((item) => {
                                 const isActive = location.pathname === item.path;
+                                const Icon = item.icon;
                                 return (
                                     <Link
                                         key={item.path}
                                         to={item.path}
                                         className={clsx(
-                                            'text-sm font-medium transition-all duration-200 px-3 py-1.5 rounded-full',
+                                            'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                                             isActive
-                                                ? 'text-gray-900 bg-gray-100/50 shadow-sm'
-                                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                                                ? 'text-accent bg-accent/10 shadow-sm'
+                                                : 'text-foreground-muted hover:text-foreground hover:bg-background-hover'
                                         )}
                                     >
-                                        {item.label}
+                                        <Icon size={16} strokeWidth={2.5} />
+                                        <span>{item.label}</span>
+                                        {/* Active indicator */}
+                                        {isActive && (
+                                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-accent rounded-full" />
+                                        )}
                                     </Link>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Right Side - User/Profile (Minimal) */}
-                    <div className="flex items-center gap-4">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200"></div>
+                    {/* Right side - placeholder for future features */}
+                    <div className="flex items-center gap-3">
+                        {/* Could add search, notifications, user menu here */}
                     </div>
                 </div>
             </div>

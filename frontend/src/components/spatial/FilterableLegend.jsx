@@ -48,10 +48,10 @@ export function FilterableLegend({ objects, onFilterChange }) {
   }
 
   return (
-    <div className="absolute top-4 right-4 z-20 w-72">
+    <div className="absolute top-4 right-4 z-20 w-64">
       {/* Dropdown Button */}
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-        <div onClick={() => setIsOpen(!isOpen)}>
+      <div className="bg-white/95 backdrop-blur-md border border-border rounded-lg shadow-md p-3">
+        <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
                   <Layers className="w-5 h-5 text-accent" />
                 ) : (
                   <div
-                    className="w-5 h-5 rounded-full ring-2 ring-background-elevated flex-shrink-0"
+                    className="w-5 h-5 rounded-full ring-2 ring-white shadow-sm flex-shrink-0"
                     style={{ backgroundColor: displayInfo.color }}
                   />
                 )}
@@ -69,7 +69,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
                   <span className="text-sm font-semibold text-foreground capitalize truncate">
                     {displayInfo.label}
                   </span>
-                  <span className="text-xs text-foreground-muted bg-background px-2 py-0.5 rounded-full font-mono">
+                  <span className="text-xs text-foreground-muted bg-background-subtle px-2 py-0.5 rounded-full font-mono">
                     {displayInfo.count}
                   </span>
                 </div>
@@ -94,7 +94,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
               onClick={() => handleClassSelect('all')}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all ${
                 selectedClass === 'all'
-                  ? 'bg-accent/10 border border-accent/20'
+                  ? 'bg-accent/10 border border-accent/30'
                   : 'hover:bg-background-hover'
               }`}
             >
@@ -103,7 +103,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
                 <span className="text-sm font-medium text-foreground">All Objects</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-foreground-muted font-mono bg-background px-2 py-0.5 rounded-full">
+                <span className="text-xs text-foreground-muted font-mono bg-background-subtle px-2 py-0.5 rounded-full">
                   {objects.length}
                 </span>
                 {selectedClass === 'all' && <Eye className="w-4 h-4 text-accent" />}
@@ -126,13 +126,13 @@ export function FilterableLegend({ objects, onFilterChange }) {
                     onClick={() => handleClassSelect(className)}
                     className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all ${
                       isSelected
-                        ? 'bg-accent/10 border border-accent/20'
+                        ? 'bg-accent/10 border border-accent/30'
                         : 'hover:bg-background-hover'
                     }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
-                        className="w-4 h-4 rounded-full ring-2 ring-background-elevated flex-shrink-0"
+                        className="w-4 h-4 rounded-full ring-2 ring-white shadow-sm flex-shrink-0"
                         style={{ backgroundColor: color }}
                       />
                       <span className="text-sm text-foreground capitalize truncate">
@@ -140,7 +140,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-foreground-muted font-mono bg-background px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-foreground-muted font-mono bg-background-subtle px-2 py-0.5 rounded-full">
                         {count}
                       </span>
                       {isSelected ? (
@@ -155,7 +155,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
             </div>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Trash2, Eye, Maximize2, ArrowUp, ArrowDown, ArrowUpDown, Tag, Package, Table2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Tag, Package, Check } from 'lucide-react';
 import { useState } from 'react';
 import { clsx } from 'clsx';
 import { getClassColor } from '@/utils/colors';
@@ -6,7 +6,7 @@ import { formatTimeAgo, formatPosition } from '@/utils/formatters';
 import { StatusBadge } from '../common/StatusBadge';
 import { ConfidencePill } from '../common/ConfidencePill';
 
-export function ObjectList({ objects, onDelete, onView }) {
+export function ObjectList({ objects, onDelete, onView, selectedObjects, onSelect }) {
   const [sortColumn, setSortColumn] = useState('last_seen');
   const [sortDirection, setSortDirection] = useState('desc');
 
@@ -79,6 +79,13 @@ export function ObjectList({ objects, onDelete, onView }) {
     </button>
   );
 
+  const handleSelectToggle = (e, objectId) => {
+    e.stopPropagation();
+    if (onSelect) {
+      onSelect(objectId);
+    }
+  };
+
   if (objects.length === 0) {
     return (
       <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
@@ -95,6 +102,9 @@ export function ObjectList({ objects, onDelete, onView }) {
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 w-12">
+                <Check size={16} className="opacity-50" />
+              </th>
               <th className="px-4 py-3 min-w-[140px]">
                 <SortableHeader column="class_name">Class</SortableHeader>
               </th>
@@ -114,18 +124,34 @@ export function ObjectList({ objects, onDelete, onView }) {
               <th className="px-4 py-3 min-w-[140px]">
                 <SortableHeader column="last_seen">Last Seen</SortableHeader>
               </th>
-              <th className="px-4 py-3 text-right w-24">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {sortedObjects.map((object) => {
               const classColor = getClassColor(object.class_name);
+              const isSelected = selectedObjects?.includes(object.object_id);
               return (
                 <tr
                   key={object.object_id}
-                  className="hover:bg-gray-50/80 transition-colors group cursor-pointer"
+                  className={`hover:bg-gray-50/80 transition-colors group cursor-pointer ${
+                    isSelected ? 'bg-blue-50/50' : ''
+                  }`}
                   onClick={() => onView(object)}
                 >
+                  <td className="px-4 py-3">
+                    {onSelect && (
+                      <button
+                        onClick={(e) => handleSelectToggle(e, object.object_id)}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                          isSelected
+                            ? 'bg-accent border-accent'
+                            : 'border-gray-300 hover:border-accent bg-white'
+                        }`}
+                      >
+                        {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div
@@ -150,7 +176,7 @@ export function ObjectList({ objects, onDelete, onView }) {
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge
-                      status={object.is_present ? 'success' : 'neutral'}
+                      status={object.is_present ? 'success' : 'error'}
                       text={object.is_present ? 'Present' : 'Absent'}
                     />
                   </td>
@@ -163,29 +189,6 @@ export function ObjectList({ objects, onDelete, onView }) {
                     <span className="text-sm text-gray-500 whitespace-nowrap">
                       {formatTimeAgo(object.last_seen)}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onView(object); }}
-                        className="p-1.5 hover:bg-gray-100 hover:text-black rounded transition-colors text-gray-400"
-                        title="View details"
-                      >
-                        <Maximize2 size={16} />
-                      </button>
-                      {onDelete && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm('Delete this object?')) onDelete(object.object_id);
-                          }}
-                          className="p-1.5 hover:bg-red-50 hover:text-red-600 rounded transition-colors text-gray-400"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
                   </td>
                 </tr>
               )

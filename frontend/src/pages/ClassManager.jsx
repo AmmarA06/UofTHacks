@@ -155,8 +155,12 @@ export function ClassManager() {
           title="Class Manager"
           description="Manage object detection classes, training data settings, and active model labels."
         >
-          <Button onClick={() => setIsCreateModalOpen(true)} className="bg-black text-white hover:bg-gray-800 border-none shadow-sm">
-            <Plus size={18} className="mr-2" />
+          <Button 
+            variant="primary"
+            onClick={() => setIsCreateModalOpen(true)} 
+            className="flex items-center gap-2"
+          >
+            <Plus size={18} />
             New Class
           </Button>
         </PageHeader>
@@ -186,7 +190,7 @@ export function ClassManager() {
         {/* Classes Grid */}
         <div>
           <div className="flex items-center justify-between mb-4 mt-8 px-1">
-            <h2 className="text-xl font-bold tracking-tight text-gray-900">All Classes</h2>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">All Classes</h2>
           </div>
 
           <ClassGrid

@@ -13,24 +13,11 @@ export function Dashboard() {
                 {/* Header Section */}
                 <motion.div
                     variants={fadeInUp}
-                    className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
                 >
-                    <div>
-                        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Overview</h1>
-                        <p className="mt-2 text-lg text-gray-500">
-                            Real-time insights and system health.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200">
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                            </span>
-                            <span className="text-sm font-medium text-gray-700">System Operational</span>
-                        </div>
-                    </div>
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">Overview</h1>
+                    <p className="mt-2 text-lg text-foreground-muted">
+                        Real-time insights and detection analytics.
+                    </p>
                 </motion.div>
 
                 {/* Metrics Grid */}
@@ -63,24 +50,27 @@ export function Dashboard() {
 
                 {/* Charts Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-gray-100">
-                            <h3 className="text-lg font-semibold text-gray-900">Class Distribution</h3>
+                    <div className="lg:col-span-2 bg-gradient-to-br from-background-elevated to-background-card rounded-lg border border-border shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-border bg-gradient-to-r from-background-subtle to-background-accent">
+                            <h3 className="text-lg font-semibold text-foreground">Class Distribution</h3>
                         </div>
-                        <div className="p-0">
+                        <div className="p-0 bg-background-elevated">
                             <ClassChart classDistribution={stats?.class_distribution} />
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                        <div className="space-y-4">
+                    <div className="bg-gradient-to-br from-background-elevated to-background-card rounded-lg border border-border shadow-sm p-6 relative overflow-hidden">
+                        {/* Decorative gradient */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-light/20 to-transparent rounded-bl-full"></div>
+                        
+                        <h3 className="text-lg font-semibold text-foreground mb-4 relative z-10">Recent Activity</h3>
+                        <div className="space-y-4 relative z-10">
                             {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                <div key={i} className="flex items-start gap-3 pb-3 border-b border-border-light last:border-0 last:pb-0">
+                                    <div className="w-2 h-2 rounded-full bg-gradient-to-br from-accent to-accent-light mt-2 shadow-sm"></div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-900">System initialization complete</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">2 minutes ago</p>
+                                        <p className="text-sm font-medium text-foreground">Detection processed</p>
+                                        <p className="text-xs text-foreground-muted mt-0.5">2 minutes ago</p>
                                     </div>
                                 </div>
                             ))}

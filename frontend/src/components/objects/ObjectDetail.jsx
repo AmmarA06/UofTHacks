@@ -120,7 +120,7 @@ export function ObjectDetail({ object, isOpen, onClose }) {
                 <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-mono border border-gray-200">
                   #{object.object_id}
                 </span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${object.is_present ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${object.is_present ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                   {object.is_present ? 'Present' : 'Absent'}
                 </span>
               </div>

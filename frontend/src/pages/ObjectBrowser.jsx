@@ -121,18 +121,18 @@ export function ObjectBrowser() {
           {/* Main filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle group-focus-within:text-accent transition-colors" size={18} />
               <Input
                 type="text"
                 placeholder="Search by ID, class name, or table name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 w-full bg-white border-gray-200 focus:border-black focus:ring-black transition-all"
+                className="pl-10 w-full bg-background-elevated border-border focus:border-accent focus:ring-accent transition-all"
               />
             </div>
 
             {/* View mode toggle */}
-            <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+            <div className="flex bg-background-elevated border border-border p-0.5 rounded-lg shadow-sm gap-0.5">
               {[
                 { mode: 'grid', icon: LayoutGrid, label: 'Grid' },
                 { mode: 'list', icon: List, label: 'List' },
@@ -142,14 +142,14 @@ export function ObjectBrowser() {
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={clsx(
-                    "px-3 py-1.5 flex items-center gap-2 rounded-md text-sm font-medium transition-all",
+                    "px-3 py-1.5 flex items-center gap-2 rounded-md text-sm font-medium transition-all duration-200",
                     viewMode === mode
-                      ? "bg-white text-black shadow-sm"
-                      : "text-gray-500 hover:text-black hover:bg-gray-200/50"
+                      ? "bg-gradient-to-br from-accent to-accent-hover text-white shadow-sm"
+                      : "text-foreground-muted hover:text-foreground hover:bg-background-hover"
                   )}
                   title={`${label} view`}
                 >
-                  <Icon size={16} />
+                  <Icon size={16} strokeWidth={2.5} />
                   <span className="hidden sm:inline">{label}</span>
                 </button>
               ))}
@@ -158,11 +158,11 @@ export function ObjectBrowser() {
 
           {/* Selection actions */}
           {paginatedObjects.length > 0 && (
-            <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className="flex items-center gap-4 bg-background-subtle border border-border rounded-lg p-3">
               <Button
                 variant="secondary"
                 onClick={handleSelectAll}
-                className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700"
+                className="flex items-center gap-2 bg-background-elevated border border-border hover:bg-background-hover text-foreground"
               >
                 {paginatedObjects.every(obj => selectedObjects.includes(obj.object_id)) ? (
                   <CheckSquare size={18} />
@@ -174,7 +174,7 @@ export function ObjectBrowser() {
 
               {selectedObjects.length > 0 && (
                 <>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-foreground-muted">
                     {selectedObjects.length} selected
                   </span>
                   <Button
@@ -193,8 +193,8 @@ export function ObjectBrowser() {
 
         {/* Results Count */}
         {!loading && (
-          <div className="text-sm text-gray-500 border-b border-gray-100 pb-4">
-            Found <span className="font-medium text-black">{objects.length}</span> object{objects.length !== 1 ? 's' : ''}
+          <div className="text-sm text-foreground-muted border-b border-border-light pb-4">
+            Found <span className="font-medium text-foreground">{objects.length}</span> object{objects.length !== 1 ? 's' : ''}
             {objects.length > ITEMS_PER_PAGE && (
               <span> • Showing {startIndex + 1}-{Math.min(endIndex, objects.length)}</span>
             )}
