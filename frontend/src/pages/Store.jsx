@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Loader2, AlertCircle, Store as StoreIcon, Info, Camera, Lock, BarChart3 } from 'lucide-react';
+import { Upload, Loader2, AlertCircle, Store as StoreIcon, Info, Camera, Lock } from 'lucide-react';
 import { analyzeFloorPlan } from '../services/geminiService';
 import StoreScene from '../components/StoreScene';
 import ShelfManagementUI from '../components/ShelfManagementUI';
-import { ShelfAnalytics } from '../components/analytics/ShelfAnalytics';
-import { OverviewAnalytics } from '../components/analytics/OverviewAnalytics';
 
 function Store() {
   const [shelves, setShelves] = useState([]);
@@ -14,8 +12,6 @@ function Store() {
   const [uploadComplete, setUploadComplete] = useState(false);
   const [selectedShelfId, setSelectedShelfId] = useState(null);
   const [isFreeCam, setIsFreeCam] = useState(false);
-  const [showShelfAnalytics, setShowShelfAnalytics] = useState(false);
-  const [showOverviewAnalytics, setShowOverviewAnalytics] = useState(false);
   const cameraControlsRef = useRef();
 
   // Get current shelf data from shelves array (always up-to-date)
@@ -189,7 +185,7 @@ function Store() {
                   <StoreIcon size={32} />
                   <div>
                     <h1 className="text-2xl font-bold">3D Store Floor Plan Analyzer</h1>
-                    <p className="text-sm text-blue-100">AI-powered warehouse visualization with analytics</p>
+                    <p className="text-sm text-blue-100">AI-powered warehouse visualization</p>
                   </div>
                 </div>
                 
@@ -261,7 +257,7 @@ function Store() {
             <div className="bg-indigo-600 text-white px-6 py-3 shadow-lg z-10">
               <div className="container mx-auto flex items-center gap-3">
                 <Info size={20} />
-                <span>Upload a floor plan image to visualize shelves and analyze product performance</span>
+                <span>Upload a floor plan image to visualize shelves in 3D</span>
               </div>
             </div>
           )}
@@ -281,40 +277,12 @@ function Store() {
             />
             
             {/* Shelf Management UI - appears when shelf selected */}
-            {selectedShelf && (
-              <div className="fixed top-6 left-6 z-50 space-y-3">
-                <ShelfManagementUI
-                  shelf={selectedShelf}
-                  onUpdateStock={handleUpdateStock}
-                  onUpdateProductType={handleUpdateProductType}
-                  onClose={handleBackToOverview}
-                />
-                
-                {/* Analytics Button for Selected Shelf */}
-                <button
-                  onClick={() => setShowShelfAnalytics(true)}
-                  className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-xl"
-                >
-                  <BarChart3 size={20} />
-                  View Shelf Analytics
-                </button>
-              </div>
-            )}
-            
-            {/* Analytics Modals */}
-            {showShelfAnalytics && selectedShelf && (
-              <ShelfAnalytics
-                shelf={selectedShelf}
-                onClose={() => setShowShelfAnalytics(false)}
-              />
-            )}
-            
-            {showOverviewAnalytics && (
-              <OverviewAnalytics
-                shelves={shelves}
-                onClose={() => setShowOverviewAnalytics(false)}
-              />
-            )}
+            <ShelfManagementUI
+              shelf={selectedShelf}
+              onUpdateStock={handleUpdateStock}
+              onUpdateProductType={handleUpdateProductType}
+              onClose={handleBackToOverview}
+            />
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -329,17 +297,6 @@ function Store() {
         {/* Legend & Controls */}
         {shelves.length > 0 && !selectedShelfId && (
           <div className="absolute bottom-6 left-6 space-y-3">
-            {/* Analytics Button */}
-            <button
-              onClick={() => setShowOverviewAnalytics(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-xl
-                bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700
-                text-white font-semibold transition-all transform hover:scale-105"
-            >
-              <BarChart3 size={20} />
-              <span>View Analytics</span>
-            </button>
-            
             {/* FreeCam Toggle Button */}
             <button
               onClick={toggleFreeCam}
