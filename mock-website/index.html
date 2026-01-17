@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShelfSense Store | Smart Retail Experience</title>
+    <!-- Replace AMPLITUDE_API_KEY with your actual API key -->
+    <script type="text/javascript"
+        src="https://cdn.amplitude.com/script/AMPLITUDE_API_KEY.experiment.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- =====================================================
+         AMPLITUDE EXPERIMENT-READY ELEMENTS
+         All targetable elements have clear IDs and classes:
+         - [data-amp-element] : All Amplitude-targetable elements
+         - [data-product-id]  : Product identifier for tracking
+         - .amp-* classes     : Amplitude experiment hooks
+         ===================================================== -->
+
+    <!-- Header / Navigation -->
+    <header id="site-header" class="site-header" data-amp-element="header">
+        <div class="header-container">
+            <a href="index.html" class="logo" id="site-logo" data-amp-element="logo">
+                <svg width="28" height="28" viewBox="0 0 32 32" fill="none" class="logo-icon">
+                    <rect x="4" y="8" width="24" height="20" rx="2" fill="currentColor" />
+                    <rect x="8" y="4" width="16" height="8" rx="1" fill="currentColor" opacity="0.7" />
+                </svg>
+                <span class="logo-text">ShelfSense</span>
+            </a>
+
+            <nav class="main-nav" id="main-navigation" data-amp-element="navigation">
+                <a href="#featured" class="nav-link" data-amp-element="nav-link">Featured</a>
+                <a href="#categories" class="nav-link" data-amp-element="nav-link">Categories</a>
+                <a href="#about" class="nav-link" data-amp-element="nav-link">About</a>
+            </nav>
+
+            <div class="header-actions">
+                <!-- Cart with badge - Amplitude can update count -->
+                <button id="cart-button" class="cart-btn amp-cart-trigger" data-amp-element="cart-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span id="cart-count" class="cart-badge amp-cart-count" data-amp-element="cart-count">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero-section" data-amp-element="hero">
+        <div class="hero-content">
+            <h1 id="hero-headline" class="hero-title amp-hero-headline" data-amp-element="hero-headline">
+                Premium products. Delivered.
+            </h1>
+            <p id="hero-subheadline" class="hero-subtitle amp-hero-subheadline" data-amp-element="hero-subheadline">
+                Curated collection of everyday essentials.
+            </p>
+            <a href="#featured" id="hero-cta" class="btn btn-primary amp-hero-cta" data-amp-element="hero-cta">
+                Shop Featured Items
+            </a>
+        </div>
+    </section>
+
+    <!-- Announcement Bar - Great for urgency messaging experiments -->
+    <div id="announcement-bar" class="announcement-bar amp-announcement" data-amp-element="announcement-bar"
+        style="display: none;">
+        <p id="announcement-text" class="announcement-text amp-announcement-text" data-amp-element="announcement-text">
+            <!-- Amplitude can inject urgency messages here -->
+        </p>
+        <button id="announcement-close" class="announcement-close" aria-label="Close announcement">&times;</button>
+    </div>
+
+    <!-- Recent Sales Feed - Social Proof Section -->
+    <section id="social-proof-section" class="social-proof-section" data-amp-element="social-proof-section">
+        <div class="container">
+            <div id="recent-sales-feed" class="recent-sales-feed amp-social-proof" data-amp-element="recent-sales-feed">
+                <div class="feed-header">
+                    <span class="pulse-dot"></span>
+                    <span id="feed-title" class="feed-title" data-amp-element="feed-title">Live Activity</span>
+                </div>
+                <div id="sales-feed-items" class="feed-items amp-feed-items" data-amp-element="sales-feed-items">
+                    <!-- Dynamic sales notifications injected here -->
+                    <div class="feed-item" data-amp-element="feed-item">
+                        <span class="feed-icon">&#10003;</span>
+                        <span class="feed-message">Someone in <strong>Toronto</strong> just purchased a <strong>Water
+                                Bottle</strong></span>
+                        <span class="feed-time">2 min ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section id="featured" class="featured-section" data-amp-element="featured-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 id="featured-title" class="section-title amp-section-title" data-amp-element="featured-title">
+                    Shop All
+                </h2>
+                <p id="featured-subtitle" class="section-subtitle amp-section-subtitle"
+                    data-amp-element="featured-subtitle">
+                    Browse our complete collection
+                </p>
+            </div>
+
+            <div id="product-grid" class="product-grid" data-amp-element="product-grid">
+
+                <!-- ==================== WATER BOTTLE ==================== -->
+                <article id="product-card-water-bottle" class="product-card amp-product-card"
+                    data-product-id="water_bottle" data-product-sku="BOTTLE-001" data-product-category="water_bottle"
+                    data-amp-element="product-card">
+                    <!-- Product Badge - For urgency/social proof experiments -->
+                    <div id="badge-water-bottle" class="product-badge amp-product-badge" data-product-id="water_bottle"
+                        data-amp-element="product-badge" style="display: none;">
+                        <!-- Amplitude injects: "Low Stock", "Trending", "Best Seller" -->
+                    </div>
+
+                    <!-- Discount Badge - For clearance experiments -->
+                    <div id="discount-badge-water-bottle" class="discount-badge amp-discount-badge"
+                        data-product-id="water_bottle" data-amp-element="discount-badge" style="display: none;">
+                        <!-- Amplitude injects: "30% OFF", "CLEARANCE" -->
+                    </div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image product-image-water-bottle">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="bottle-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#3B82F6" />
+                                        <stop offset="100%" style="stop-color:#1D4ED8" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="40" y="20" width="40" height="10" rx="2" fill="#94A3B8" />
+                                <rect x="35" y="30" width="50" height="75" rx="8" fill="url(#bottle-gradient)" />
+                                <rect x="42" y="40" width="36" height="55" rx="4" fill="#60A5FA" opacity="0.3" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-water-bottle" class="quick-add-btn amp-quick-add"
+                            data-product-id="water_bottle" data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-water-bottle" class="product-name amp-product-name"
+                            data-product-id="water_bottle" data-amp-element="product-name">
+                            Water Bottle
+                        </h3>
+
+                        <p id="product-description-water-bottle" class="product-description amp-product-description"
+                            data-product-id="water_bottle" data-amp-element="product-description">
+                            Premium insulated stainless steel bottle.
+                        </p>
+
+                        <div class="product-pricing">
+                            <!-- Original Price (shown when discounted) -->
+                            <span id="original-price-water-bottle" class="original-price amp-original-price"
+                                data-product-id="water_bottle" data-amp-element="original-price" style="display: none;">
+                                $24.99
+                            </span>
+
+                            <!-- Current Price - Primary target for price experiments -->
+                            <span id="current-price-water-bottle" class="current-price amp-current-price"
+                                data-product-id="water_bottle" data-base-price="24.99" data-amp-element="current-price">
+                                $24.99
+                            </span>
+                        </div>
+
+                        <!-- Stock Status - For urgency experiments -->
+                        <div id="stock-status-water-bottle" class="stock-status amp-stock-status"
+                            data-product-id="water_bottle" data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-water-bottle" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-water-bottle" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="water_bottle" data-product-name="Water Bottle" data-product-price="24.99"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== PHONE ==================== -->
+                <article id="product-card-phone" class="product-card amp-product-card" data-product-id="phone"
+                    data-product-sku="PHONE-001" data-product-category="phone" data-amp-element="product-card">
+                    <div id="badge-phone" class="product-badge amp-product-badge" data-product-id="phone"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-phone" class="discount-badge amp-discount-badge" data-product-id="phone"
+                        data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image product-image-phone">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="phone-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#8B5CF6" />
+                                        <stop offset="100%" style="stop-color:#6D28D9" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="30" y="10" width="60" height="100" rx="8" fill="url(#phone-gradient)" />
+                                <rect x="34" y="18" width="52" height="80" rx="2" fill="#1E1B4B" />
+                                <circle cx="60" cy="105" r="4" fill="#4C1D95" />
+                                <rect x="50" y="12" width="20" height="3" rx="1" fill="#4C1D95" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-phone" class="quick-add-btn amp-quick-add" data-product-id="phone"
+                            data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-phone" class="product-name amp-product-name" data-product-id="phone"
+                            data-amp-element="product-name">
+                            Phone
+                        </h3>
+
+                        <p id="product-description-phone" class="product-description amp-product-description"
+                            data-product-id="phone" data-amp-element="product-description">
+                            Latest smartphone with advanced camera and all-day battery life.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-phone" class="original-price amp-original-price"
+                                data-product-id="phone" data-amp-element="original-price" style="display: none;">
+                                $999.99
+                            </span>
+
+                            <span id="current-price-phone" class="current-price amp-current-price"
+                                data-product-id="phone" data-base-price="999.99" data-amp-element="current-price">
+                                $999.99
+                            </span>
+                        </div>
+
+                        <div id="stock-status-phone" class="stock-status amp-stock-status" data-product-id="phone"
+                            data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-phone" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-phone" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="phone" data-product-name="Phone" data-product-price="999.99"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== APPLE ==================== -->
+                <article id="product-card-apple" class="product-card amp-product-card" data-product-id="apple"
+                    data-product-sku="FRUIT-001" data-product-category="fruit" data-amp-element="product-card">
+                    <div id="badge-apple" class="product-badge amp-product-badge" data-product-id="apple"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-apple" class="discount-badge amp-discount-badge" data-product-id="apple"
+                        data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image product-image-apple">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="apple-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#EF4444" />
+                                        <stop offset="100%" style="stop-color:#DC2626" />
+                                    </linearGradient>
+                                    <linearGradient id="leaf-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#22C55E" />
+                                        <stop offset="100%" style="stop-color:#16A34A" />
+                                    </linearGradient>
+                                </defs>
+                                <ellipse cx="60" cy="65" rx="35" ry="40" fill="url(#apple-gradient)" />
+                                <ellipse cx="60" cy="70" rx="30" ry="35" fill="#FCA5A5" opacity="0.2" />
+                                <path d="M60 25 Q65 15 75 20 Q70 30 60 35 Z" fill="url(#leaf-gradient)" />
+                                <rect x="58" y="20" width="4" height="15" rx="2" fill="#78350F" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-apple" class="quick-add-btn amp-quick-add" data-product-id="apple"
+                            data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-apple" class="product-name amp-product-name" data-product-id="apple"
+                            data-amp-element="product-name">
+                            Apple
+                        </h3>
+
+                        <p id="product-description-apple" class="product-description amp-product-description"
+                            data-product-id="apple" data-amp-element="product-description">
+                            Fresh organic Honeycrisp apple. Locally sourced, naturally sweet.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-apple" class="original-price amp-original-price"
+                                data-product-id="apple" data-amp-element="original-price" style="display: none;">
+                                $1.49
+                            </span>
+
+                            <span id="current-price-apple" class="current-price amp-current-price"
+                                data-product-id="apple" data-base-price="1.49" data-amp-element="current-price">
+                                $1.49
+                            </span>
+                        </div>
+
+                        <div id="stock-status-apple" class="stock-status amp-stock-status" data-product-id="apple"
+                            data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-apple" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-apple" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="apple" data-product-name="Apple" data-product-price="1.49"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== LAPTOP ==================== -->
+                <article id="product-card-laptop" class="product-card amp-product-card" data-product-id="laptop"
+                    data-product-sku="LAPTOP-001" data-product-category="electronics" data-amp-element="product-card">
+                    <div id="badge-laptop" class="product-badge amp-product-badge" data-product-id="laptop"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-laptop" class="discount-badge amp-discount-badge" data-product-id="laptop"
+                        data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="laptop-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#64748B" />
+                                        <stop offset="100%" style="stop-color:#475569" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="20" y="25" width="80" height="50" rx="3" fill="url(#laptop-gradient)" />
+                                <rect x="24" y="28" width="72" height="44" rx="1" fill="#1E293B" />
+                                <rect x="10" y="75" width="100" height="4" rx="1" fill="url(#laptop-gradient)" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-laptop" class="quick-add-btn amp-quick-add" data-product-id="laptop"
+                            data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-laptop" class="product-name amp-product-name" data-product-id="laptop"
+                            data-amp-element="product-name">
+                            Laptop Pro
+                        </h3>
+
+                        <p id="product-description-laptop" class="product-description amp-product-description"
+                            data-product-id="laptop" data-amp-element="product-description">
+                            Powerful ultrabook with stunning display.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-laptop" class="original-price amp-original-price"
+                                data-product-id="laptop" data-amp-element="original-price" style="display: none;">
+                                $1,299.99
+                            </span>
+
+                            <span id="current-price-laptop" class="current-price amp-current-price"
+                                data-product-id="laptop" data-base-price="1299.99" data-amp-element="current-price">
+                                $1,299.99
+                            </span>
+                        </div>
+
+                        <div id="stock-status-laptop" class="stock-status amp-stock-status" data-product-id="laptop"
+                            data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-laptop" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-laptop" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="laptop" data-product-name="Laptop Pro" data-product-price="1299.99"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== HEADPHONES ==================== -->
+                <article id="product-card-headphones" class="product-card amp-product-card" data-product-id="headphones"
+                    data-product-sku="HEADPHONES-001" data-product-category="audio" data-amp-element="product-card">
+                    <div id="badge-headphones" class="product-badge amp-product-badge" data-product-id="headphones"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-headphones" class="discount-badge amp-discount-badge"
+                        data-product-id="headphones" data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="headphones-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#0EA5E9" />
+                                        <stop offset="100%" style="stop-color:#0284C7" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M40 30 Q40 15 60 15 Q80 15 80 30" stroke="url(#headphones-gradient)"
+                                    stroke-width="8" fill="none" stroke-linecap="round" />
+                                <rect x="30" y="30" width="15" height="25" rx="7" fill="url(#headphones-gradient)" />
+                                <rect x="75" y="30" width="15" height="25" rx="7" fill="url(#headphones-gradient)" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-headphones" class="quick-add-btn amp-quick-add"
+                            data-product-id="headphones" data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-headphones" class="product-name amp-product-name"
+                            data-product-id="headphones" data-amp-element="product-name">
+                            Wireless Headphones
+                        </h3>
+
+                        <p id="product-description-headphones" class="product-description amp-product-description"
+                            data-product-id="headphones" data-amp-element="product-description">
+                            Premium sound with active noise cancellation.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-headphones" class="original-price amp-original-price"
+                                data-product-id="headphones" data-amp-element="original-price" style="display: none;">
+                                $299.99
+                            </span>
+
+                            <span id="current-price-headphones" class="current-price amp-current-price"
+                                data-product-id="headphones" data-base-price="299.99" data-amp-element="current-price">
+                                $299.99
+                            </span>
+                        </div>
+
+                        <div id="stock-status-headphones" class="stock-status amp-stock-status"
+                            data-product-id="headphones" data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-headphones" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-headphones" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="headphones" data-product-name="Wireless Headphones"
+                            data-product-price="299.99" data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== BACKPACK ==================== -->
+                <article id="product-card-backpack" class="product-card amp-product-card" data-product-id="backpack"
+                    data-product-sku="BACKPACK-001" data-product-category="accessories" data-amp-element="product-card">
+                    <div id="badge-backpack" class="product-badge amp-product-badge" data-product-id="backpack"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-backpack" class="discount-badge amp-discount-badge"
+                        data-product-id="backpack" data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="backpack-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#10B981" />
+                                        <stop offset="100%" style="stop-color:#059669" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="35" y="25" width="50" height="60" rx="6" fill="url(#backpack-gradient)" />
+                                <rect x="40" y="30" width="40" height="15" rx="3" fill="#34D399" opacity="0.6" />
+                                <ellipse cx="55" cy="20" rx="8" ry="6" fill="url(#backpack-gradient)" />
+                                <ellipse cx="65" cy="20" rx="8" ry="6" fill="url(#backpack-gradient)" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-backpack" class="quick-add-btn amp-quick-add" data-product-id="backpack"
+                            data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-backpack" class="product-name amp-product-name" data-product-id="backpack"
+                            data-amp-element="product-name">
+                            Travel Backpack
+                        </h3>
+
+                        <p id="product-description-backpack" class="product-description amp-product-description"
+                            data-product-id="backpack" data-amp-element="product-description">
+                            Durable backpack with laptop compartment.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-backpack" class="original-price amp-original-price"
+                                data-product-id="backpack" data-amp-element="original-price" style="display: none;">
+                                $79.99
+                            </span>
+
+                            <span id="current-price-backpack" class="current-price amp-current-price"
+                                data-product-id="backpack" data-base-price="79.99" data-amp-element="current-price">
+                                $79.99
+                            </span>
+                        </div>
+
+                        <div id="stock-status-backpack" class="stock-status amp-stock-status" data-product-id="backpack"
+                            data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-backpack" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-backpack" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="backpack" data-product-name="Travel Backpack" data-product-price="79.99"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== SMARTWATCH ==================== -->
+                <article id="product-card-smartwatch" class="product-card amp-product-card" data-product-id="smartwatch"
+                    data-product-sku="WATCH-001" data-product-category="wearables" data-amp-element="product-card">
+                    <div id="badge-smartwatch" class="product-badge amp-product-badge" data-product-id="smartwatch"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-smartwatch" class="discount-badge amp-discount-badge"
+                        data-product-id="smartwatch" data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="watch-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#F59E0B" />
+                                        <stop offset="100%" style="stop-color:#D97706" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="45" y="25" width="30" height="8" rx="2" fill="url(#watch-gradient)" />
+                                <rect x="40" y="33" width="40" height="45" rx="8" fill="url(#watch-gradient)" />
+                                <rect x="44" y="37" width="32" height="37" rx="4" fill="#1F2937" />
+                                <rect x="45" y="78" width="30" height="8" rx="2" fill="url(#watch-gradient)" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-smartwatch" class="quick-add-btn amp-quick-add"
+                            data-product-id="smartwatch" data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-smartwatch" class="product-name amp-product-name"
+                            data-product-id="smartwatch" data-amp-element="product-name">
+                            Smart Watch
+                        </h3>
+
+                        <p id="product-description-smartwatch" class="product-description amp-product-description"
+                            data-product-id="smartwatch" data-amp-element="product-description">
+                            Advanced fitness tracking and notifications.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-smartwatch" class="original-price amp-original-price"
+                                data-product-id="smartwatch" data-amp-element="original-price" style="display: none;">
+                                $399.99
+                            </span>
+
+                            <span id="current-price-smartwatch" class="current-price amp-current-price"
+                                data-product-id="smartwatch" data-base-price="399.99" data-amp-element="current-price">
+                                $399.99
+                            </span>
+                        </div>
+
+                        <div id="stock-status-smartwatch" class="stock-status amp-stock-status"
+                            data-product-id="smartwatch" data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-smartwatch" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-smartwatch" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="smartwatch" data-product-name="Smart Watch" data-product-price="399.99"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ==================== COFFEE MUG ==================== -->
+                <article id="product-card-mug" class="product-card amp-product-card" data-product-id="mug"
+                    data-product-sku="MUG-001" data-product-category="home" data-amp-element="product-card">
+                    <div id="badge-mug" class="product-badge amp-product-badge" data-product-id="mug"
+                        data-amp-element="product-badge" style="display: none;"></div>
+
+                    <div id="discount-badge-mug" class="discount-badge amp-discount-badge" data-product-id="mug"
+                        data-amp-element="discount-badge" style="display: none;"></div>
+
+                    <div class="product-image-wrapper">
+                        <div class="product-image">
+                            <svg viewBox="0 0 120 120" class="product-svg">
+                                <defs>
+                                    <linearGradient id="mug-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#EC4899" />
+                                        <stop offset="100%" style="stop-color:#DB2777" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="35" y="35" width="40" height="45" rx="4" fill="url(#mug-gradient)" />
+                                <rect x="38" y="38" width="34" height="39" rx="2" fill="#FDF2F8" opacity="0.3" />
+                                <path d="M75 45 Q85 45 85 55 Q85 65 75 65" stroke="url(#mug-gradient)" stroke-width="4"
+                                    fill="none" />
+                            </svg>
+                        </div>
+                        <button id="quick-add-mug" class="quick-add-btn amp-quick-add" data-product-id="mug"
+                            data-amp-element="quick-add-button">
+                            Quick Add
+                        </button>
+                    </div>
+
+                    <div class="product-info">
+                        <h3 id="product-name-mug" class="product-name amp-product-name" data-product-id="mug"
+                            data-amp-element="product-name">
+                            Ceramic Mug
+                        </h3>
+
+                        <p id="product-description-mug" class="product-description amp-product-description"
+                            data-product-id="mug" data-amp-element="product-description">
+                            Handcrafted ceramic mug with comfort grip.
+                        </p>
+
+                        <div class="product-pricing">
+                            <span id="original-price-mug" class="original-price amp-original-price"
+                                data-product-id="mug" data-amp-element="original-price" style="display: none;">
+                                $19.99
+                            </span>
+
+                            <span id="current-price-mug" class="current-price amp-current-price" data-product-id="mug"
+                                data-base-price="19.99" data-amp-element="current-price">
+                                $19.99
+                            </span>
+                        </div>
+
+                        <div id="stock-status-mug" class="stock-status amp-stock-status" data-product-id="mug"
+                            data-amp-element="stock-status">
+                            <span class="stock-indicator in-stock"></span>
+                            <span id="stock-text-mug" class="stock-text amp-stock-text">In Stock</span>
+                        </div>
+
+                        <button id="add-to-cart-mug" class="btn btn-primary add-to-cart-btn amp-add-to-cart"
+                            data-product-id="mug" data-product-name="Ceramic Mug" data-product-price="19.99"
+                            data-amp-element="add-to-cart-button">
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Badges Section -->
+    <section id="trust-section" class="trust-section" data-amp-element="trust-section">
+        <div class="container">
+            <div class="trust-badges">
+                <div class="trust-badge" data-amp-element="trust-badge">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <polyline points="9,12 11,14 15,10"></polyline>
+                    </svg>
+                    <span>Secure Checkout</span>
+                </div>
+                <div class="trust-badge" data-amp-element="trust-badge">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
+                    <span>Free Shipping</span>
+                </div>
+                <div class="trust-badge" data-amp-element="trust-badge">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <span>30-Day Returns</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="site-footer" class="site-footer" data-amp-element="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none" class="logo-icon">
+                            <rect x="4" y="8" width="24" height="20" rx="2" fill="currentColor" />
+                            <rect x="8" y="4" width="16" height="8" rx="1" fill="currentColor" opacity="0.7" />
+                        </svg>
+                        <span class="logo-text">ShelfSense</span>
+                    </div>
+                    <p class="footer-tagline">Smart retail, powered by AI</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#" data-amp-element="footer-link">Privacy Policy</a>
+                    <a href="#" data-amp-element="footer-link">Terms of Service</a>
+                    <a href="#" data-amp-element="footer-link">Contact</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 ShelfSense. Behavioral Strategy Advisor Demo.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" data-amp-element="toast-container">
+        <!-- Dynamic toasts appear here -->
+    </div>
+
+    <!-- Amplitude Browser SDK -->
+    <script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
+    <script>
+        // Initialize Amplitude with your API key
+        // This matches your .env VITE_AMPLITUDE_API_KEY
+        // Replace with your actual Amplitude API key
+        const AMPLITUDE_API_KEY = 'AMPLITUDE_API_KEY';
+
+        window.amplitude.init(AMPLITUDE_API_KEY, {
+            serverZone: 'US',
+            flushIntervalMillis: 1000,
+            flushQueueSize: 1,
+            defaultTracking: {
+                sessions: true,
+                pageViews: true,
+                formInteractions: false,
+                fileDownloads: false,
+            },
+        });
+        console.log('[Amplitude] SDK initialized with key:', AMPLITUDE_API_KEY.substring(0, 8) + '...');
+    </script>
+
+    <!-- Store Scripts -->
+    <!-- Use centralized Amplitude integration -->
+    <script type="module">
+        // Initialize centralized Amplitude client
+        import { AmplitudeClient } from '../amplitude-integration/browser/amplitude-client.js';
+        import '../amplitude-integration/browser/hooks/ecommerce-hooks.js';
+        
+        // Initialize with API key from environment or hardcoded
+        AmplitudeClient.init({
+            apiKey: AMPLITUDE_API_KEY, // Uses the key from above
+        }).then(() => {
+            console.log('[ShelfSense] Amplitude integration ready');
+        });
+    </script>
+    <script defer src="js/store.js"></script>
+
+    <!-- High-Precision Glass Micro-Interactions -->
+    <script src="js/micro-interactions.js"></script>
+</body>
+
+</html>

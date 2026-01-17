@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | ShelfSense Store</title>
+    <!-- Replace AMPLITUDE_API_KEY with your actual API key -->
+    <script type="text/javascript"
+        src="https://cdn.amplitude.com/script/AMPLITUDE_API_KEY.experiment.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/product.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header id="site-header" class="site-header" data-amp-element="header">
+        <div class="header-container">
+            <a href="index.html" class="logo" id="site-logo" data-amp-element="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" class="logo-icon">
+                    <rect x="4" y="8" width="24" height="20" rx="2" fill="currentColor" />
+                    <rect x="8" y="4" width="16" height="8" rx="1" fill="currentColor" opacity="0.7" />
+                </svg>
+                <span class="logo-text">ShelfSense</span>
+            </a>
+
+            <nav class="main-nav" id="main-navigation" data-amp-element="navigation">
+                <a href="index.html#featured" class="nav-link" data-amp-element="nav-link">Featured</a>
+                <a href="index.html#categories" class="nav-link" data-amp-element="nav-link">Categories</a>
+                <a href="index.html#about" class="nav-link" data-amp-element="nav-link">About</a>
+            </nav>
+
+            <div class="header-actions">
+                <button id="cart-button" class="cart-btn amp-cart-trigger" data-amp-element="cart-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span id="cart-count" class="cart-badge amp-cart-count" data-amp-element="cart-count">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Announcement Bar -->
+    <div id="announcement-bar" class="announcement-bar amp-announcement" data-amp-element="announcement-bar"
+        style="display: none;">
+        <p id="announcement-text" class="announcement-text amp-announcement-text" data-amp-element="announcement-text">
+        </p>
+        <button id="announcement-close" class="announcement-close" aria-label="Close announcement">&times;</button>
+    </div>
+
+    <!-- Main Product Section -->
+    <main class="product-page" data-amp-element="product-page">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb" data-amp-element="breadcrumb">
+                <a href="index.html">Home</a>
+                <span class="separator">/</span>
+                <a href="index.html#featured">Featured</a>
+                <span class="separator">/</span>
+                <span id="breadcrumb-product" class="current" data-amp-element="breadcrumb-current">Product</span>
+            </nav>
+
+            <div class="product-layout">
+                <!-- Product Gallery -->
+                <div class="product-gallery" data-amp-element="product-gallery">
+                    <div id="product-main-image" class="main-image amp-product-image"
+                        data-amp-element="product-main-image">
+                        <!-- Product image placeholder - replaced by JS based on product -->
+                        <div class="image-placeholder">
+                            <span>Select a product</span>
+                        </div>
+                    </div>
+
+                    <!-- Badges overlay -->
+                    <div id="pdp-badge" class="pdp-badge product-badge amp-product-badge" data-amp-element="pdp-badge"
+                        style="display: none;"></div>
+
+                    <div id="pdp-discount-badge" class="pdp-discount-badge discount-badge amp-discount-badge"
+                        data-amp-element="pdp-discount-badge" style="display: none;"></div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="product-details" data-amp-element="product-details">
+                    <div class="product-header">
+                        <span id="pdp-category" class="product-category amp-product-category"
+                            data-amp-element="pdp-category">
+                            Category
+                        </span>
+                        <h1 id="pdp-name" class="product-title amp-product-name" data-amp-element="pdp-name">
+                            Product Name
+                        </h1>
+                        <p id="pdp-sku" class="product-sku amp-product-sku" data-amp-element="pdp-sku">
+                            SKU: ---
+                        </p>
+                    </div>
+
+                    <!-- Pricing Section -->
+                    <div class="pricing-section" data-amp-element="pricing-section">
+                        <div class="price-display">
+                            <span id="pdp-original-price" class="original-price amp-original-price"
+                                data-amp-element="pdp-original-price" style="display: none;">
+                                $0.00
+                            </span>
+                            <span id="pdp-current-price" class="current-price amp-current-price"
+                                data-amp-element="pdp-current-price">
+                                $0.00
+                            </span>
+                        </div>
+
+                        <!-- Savings callout -->
+                        <div id="pdp-savings" class="savings-callout amp-savings" data-amp-element="pdp-savings"
+                            style="display: none;">
+                            You save: <span id="pdp-savings-amount">$0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Stock Status -->
+                    <div id="pdp-stock-status" class="stock-status amp-stock-status"
+                        data-amp-element="pdp-stock-status">
+                        <span class="stock-indicator in-stock"></span>
+                        <span id="pdp-stock-text" class="stock-text amp-stock-text">In Stock</span>
+                    </div>
+
+                    <!-- Live Viewers (Social Proof) -->
+                    <div id="pdp-viewers" class="live-viewers amp-live-viewers" data-amp-element="pdp-viewers"
+                        style="display: none;">
+                        <span class="viewer-icon">👁</span>
+                        <span id="pdp-viewer-count" class="viewer-count">0</span> people are viewing this right now
+                    </div>
+
+                    <!-- Product Description -->
+                    <div class="product-description-section">
+                        <h3>Description</h3>
+                        <p id="pdp-description" class="product-description amp-product-description"
+                            data-amp-element="pdp-description">
+                            Loading product description...
+                        </p>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="quantity-section" data-amp-element="quantity-section">
+                        <label for="quantity">Quantity</label>
+                        <div class="quantity-selector">
+                            <button id="qty-decrease" class="qty-btn" data-amp-element="qty-decrease">-</button>
+                            <input type="number" id="quantity" class="qty-input amp-quantity"
+                                data-amp-element="quantity-input" value="1" min="1" max="10">
+                            <button id="qty-increase" class="qty-btn" data-amp-element="qty-increase">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Add to Cart -->
+                    <div class="action-buttons" data-amp-element="action-buttons">
+                        <button id="pdp-add-to-cart" class="btn btn-primary btn-large add-to-cart-btn amp-add-to-cart"
+                            data-amp-element="pdp-add-to-cart">
+                            Add to Cart
+                        </button>
+                        <button id="pdp-buy-now" class="btn btn-secondary btn-large amp-buy-now"
+                            data-amp-element="pdp-buy-now">
+                            Buy Now
+                        </button>
+                    </div>
+
+                    <!-- Trust Signals -->
+                    <div class="trust-signals" data-amp-element="trust-signals">
+                        <div class="trust-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            <span>Secure Checkout</span>
+                        </div>
+                        <div class="trust-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="1" y="3" width="15" height="13"></rect>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                            </svg>
+                            <span>Free Shipping</span>
+                        </div>
+                        <div class="trust-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            <span>30-Day Returns</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Purchases (Social Proof) -->
+            <section id="recent-purchases" class="recent-purchases-section" data-amp-element="recent-purchases-section">
+                <h3>Recent Purchases</h3>
+                <div id="pdp-recent-sales" class="recent-sales-list amp-social-proof"
+                    data-amp-element="pdp-recent-sales">
+                    <!-- Dynamic sales notifications -->
+                </div>
+            </section>
+
+            <!-- Related Products -->
+            <section class="related-products-section" data-amp-element="related-products">
+                <h3>You May Also Like</h3>
+                <div id="related-products-grid" class="related-grid" data-amp-element="related-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="site-footer" class="site-footer" data-amp-element="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none" class="logo-icon">
+                            <rect x="4" y="8" width="24" height="20" rx="2" fill="currentColor" />
+                            <rect x="8" y="4" width="16" height="8" rx="1" fill="currentColor" opacity="0.7" />
+                        </svg>
+                        <span class="logo-text">ShelfSense</span>
+                    </div>
+                    <p class="footer-tagline">Smart retail, powered by AI</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#" data-amp-element="footer-link">Privacy Policy</a>
+                    <a href="#" data-amp-element="footer-link">Terms of Service</a>
+                    <a href="#" data-amp-element="footer-link">Contact</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 ShelfSense. Behavioral Strategy Advisor Demo.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container" data-amp-element="toast-container"></div>
+
+    <!-- Amplitude Browser SDK -->
+    <script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
+    <script>
+        // Replace with your actual Amplitude API key
+        const AMPLITUDE_API_KEY = 'AMPLITUDE_API_KEY';
+        window.amplitude.init(AMPLITUDE_API_KEY, {
+            serverZone: 'US',
+            flushIntervalMillis: 1000,
+            flushQueueSize: 1,
+            defaultTracking: { sessions: true, pageViews: true },
+        });
+        console.log('[Amplitude] SDK initialized');
+    </script>
+
+    <!-- Store Scripts -->
+    <!-- Use centralized Amplitude integration -->
+    <script type="module">
+        // Initialize centralized Amplitude client
+        import { AmplitudeClient } from '../amplitude-integration/browser/amplitude-client.js';
+        import '../amplitude-integration/browser/hooks/ecommerce-hooks.js';
+        
+        // Initialize with API key from environment or hardcoded
+        AmplitudeClient.init({
+            apiKey: AMPLITUDE_API_KEY, // Uses the key from above
+        }).then(() => {
+            console.log('[ShelfSense] Amplitude integration ready');
+        });
+    </script>
+    <script defer src="js/store.js"></script>
+    <script defer src="js/product-page.js"></script>
+
+    <!-- High-Precision Glass Micro-Interactions -->
+    <script src="js/micro-interactions.js"></script>
+</body>
+
+</html>

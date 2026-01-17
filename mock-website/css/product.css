@@ -1,0 +1,686 @@
+/* =====================================================
+   PRODUCT DETAIL PAGE - HIGH-PRECISION GLASS SYSTEM
+   ===================================================== */
+
+/* Breadcrumb */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: calc(76px + 2.5rem) 0 2.5rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    letter-spacing: -0.01em;
+}
+
+.breadcrumb a {
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    opacity: 0.9;
+}
+
+.breadcrumb a:hover {
+    opacity: 1;
+    color: var(--amplitude-indigo-glow);
+}
+
+.breadcrumb .separator {
+    color: var(--text-muted);
+    opacity: 0.3;
+}
+
+.breadcrumb .current {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Product Layout */
+.product-page {
+    min-height: 100vh;
+    padding-bottom: var(--space-3xl);
+}
+
+.product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gutter-lg);
+    margin-bottom: var(--space-3xl);
+}
+
+@media (max-width: 968px) {
+    .product-layout {
+        grid-template-columns: 1fr;
+        gap: var(--space-xl);
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   Product Gallery - Milled Glass Container
+   ══════════════════════════════════════════════════════ */
+.product-gallery {
+    position: relative;
+
+    /* Milled Glass Surface */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--glass-border-outer);
+    overflow: hidden;
+
+    /* Dual-stroke chamfered edge */
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 var(--glass-chamfer),
+        inset 0 -1px 0 var(--glass-border-inner);
+}
+
+/* Specular highlight */
+.product-gallery::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2) 30%,
+        rgba(255, 255, 255, 0.25) 50%,
+        rgba(255, 255, 255, 0.2) 70%,
+        transparent);
+    z-index: 10;
+}
+
+.main-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 560px;
+    padding: 4rem;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.main-image svg {
+    width: 320px;
+    height: 320px;
+    filter: drop-shadow(0 16px 40px rgba(0, 0, 0, 0.15));
+    transition: transform var(--transition-slow), filter var(--transition-base);
+}
+
+.main-image:hover svg {
+    transform: scale(1.03) translateY(-4px);
+    filter: drop-shadow(0 24px 48px rgba(82, 93, 252, 0.15));
+}
+
+.image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 300px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-xl);
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    letter-spacing: -0.01em;
+}
+
+/* PDP Badges - Milled Glass Pills */
+.pdp-badge {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.6875rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: white;
+
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(20px) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border-outer);
+    border-radius: var(--radius-full);
+
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 var(--glass-chamfer);
+    z-index: 5;
+}
+
+.pdp-discount-badge {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.6875rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: white;
+
+    background: linear-gradient(135deg, var(--danger-color), #DC2626);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full);
+
+    box-shadow:
+        0 4px 20px var(--danger-glow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    z-index: 5;
+}
+
+/* ══════════════════════════════════════════════════════
+   Product Details - Typography System
+   ══════════════════════════════════════════════════════ */
+.product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.product-header {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.product-category {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--amplitude-indigo-glow);
+    margin-bottom: 0.75rem;
+}
+
+.product-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: var(--font-weight-bold);
+    line-height: 1.05;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.03em;
+
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 255, 255, 0.85) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.product-sku {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    font-weight: var(--font-weight-normal);
+}
+
+/* Pricing Section */
+.pricing-section {
+    padding: 0;
+}
+
+.price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.pricing-section .original-price {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-light);
+    opacity: 0.5;
+}
+
+.pricing-section .current-price {
+    font-size: clamp(2rem, 4vw, 2.5rem);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.savings-callout {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1.125rem;
+
+    background: rgba(16, 185, 129, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: var(--radius-md);
+
+    color: var(--success-color);
+    font-size: 0.8125rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: -0.01em;
+}
+
+/* Stock Status */
+.product-details .stock-status {
+    margin: 0;
+}
+
+/* Live Viewers - Data-Viz Accent */
+.live-viewers {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+
+    background: rgba(245, 158, 11, 0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(245, 158, 11, 0.12);
+    border-radius: var(--radius-md);
+
+    font-size: 0.8125rem;
+    color: var(--warning-color);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: -0.01em;
+}
+
+.viewer-icon {
+    font-size: 1rem;
+    animation: viewerPulse 2s ease-in-out infinite;
+}
+
+@keyframes viewerPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.viewer-count {
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Description */
+.product-description-section {
+    padding: 1.75rem 0;
+    border-top: 1px solid var(--glass-border-inner);
+}
+
+.product-description-section h3 {
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.product-description-section .product-description {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-light);
+    letter-spacing: -0.01em;
+}
+
+/* Quantity Selector - Milled Glass */
+.quantity-section {
+    padding: 0;
+}
+
+.quantity-section label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.quantity-selector {
+    display: inline-flex;
+    align-items: center;
+
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border-outer);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+
+    box-shadow:
+        inset 0 1px 0 var(--glass-chamfer),
+        inset 0 -1px 0 var(--glass-border-inner);
+}
+
+.qty-btn {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-light);
+    color: var(--text-secondary);
+    background: transparent;
+    transition: all var(--transition-fast);
+}
+
+.qty-btn:hover {
+    color: var(--amplitude-indigo-glow);
+    background: var(--glass-bg-hover);
+}
+
+.qty-input {
+    width: 64px;
+    height: 52px;
+    border: none;
+    border-left: 1px solid var(--glass-border-inner);
+    border-right: 1px solid var(--glass-border-inner);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 1.0625rem;
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    -moz-appearance: textfield;
+    letter-spacing: -0.01em;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    padding: 0;
+}
+
+.btn-large {
+    flex: 1;
+    padding: 1.125rem 2rem;
+    font-size: 1rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: -0.01em;
+}
+
+.btn-large.btn-primary {
+    background: linear-gradient(135deg, var(--amplitude-indigo), var(--cyber-violet));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    box-shadow:
+        0 4px 24px rgba(82, 93, 252, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.btn-large.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow:
+        0 12px 40px rgba(82, 93, 252, 0.45),
+        var(--shadow-glow-indigo),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.btn-large.btn-secondary {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border-outer);
+
+    box-shadow:
+        inset 0 1px 0 var(--glass-chamfer),
+        inset 0 -1px 0 var(--glass-border-inner);
+}
+
+.btn-large.btn-secondary:hover {
+    background: var(--glass-bg-hover);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 var(--glass-chamfer);
+}
+
+/* Trust Signals - Milled Glass Card */
+.trust-signals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 1.75rem 2rem;
+
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border-outer);
+    border-radius: var(--radius-xl);
+
+    box-shadow:
+        inset 0 1px 0 var(--glass-chamfer),
+        inset 0 -1px 0 var(--glass-border-inner);
+}
+
+.trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-normal);
+    letter-spacing: -0.01em;
+}
+
+.trust-item svg {
+    color: var(--amplitude-indigo-glow);
+    opacity: 0.85;
+}
+
+/* ══════════════════════════════════════════════════════
+   Recent Purchases Section - Social Proof
+   ══════════════════════════════════════════════════════ */
+.recent-purchases-section {
+    padding: 3.5rem 0;
+    border-top: 1px solid var(--glass-border-inner);
+}
+
+.recent-purchases-section h3 {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.recent-sales-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sale-item {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(16px) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border-outer);
+    border-radius: var(--radius-xl);
+
+    animation: fadeInSlide 0.5s var(--ease-out-expo);
+
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 var(--glass-chamfer);
+}
+
+.sale-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: var(--radius-full);
+
+    color: var(--success-color);
+    font-size: 1.125rem;
+}
+
+.sale-info {
+    flex: 1;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
+    font-weight: var(--font-weight-light);
+}
+
+.sale-info strong {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.sale-time {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* ══════════════════════════════════════════════════════
+   Related Products - Milled Glass Cards
+   ══════════════════════════════════════════════════════ */
+.related-products-section {
+    padding: 3.5rem 0;
+    border-top: 1px solid var(--glass-border-inner);
+}
+
+.related-products-section h3 {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--gutter-sm);
+}
+
+.related-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border-outer);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 var(--glass-chamfer),
+        inset 0 -1px 0 var(--glass-border-inner);
+
+    transition:
+        transform var(--transition-base),
+        box-shadow var(--transition-base);
+}
+
+.related-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+        0 20px 48px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(82, 93, 252, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        var(--shadow-glow-indigo);
+}
+
+.related-card .related-image {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+
+.related-card .related-image svg {
+    width: 90px;
+    height: 90px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+    transition: transform var(--transition-base);
+}
+
+.related-card:hover .related-image svg {
+    transform: scale(1.08);
+}
+
+.related-card .related-name {
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
+}
+
+.related-card .related-price {
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-light);
+    font-size: 0.9375rem;
+    letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════════════
+   Mobile Adjustments
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .breadcrumb {
+        padding: calc(76px + 2rem) 0 2rem;
+    }
+
+    .product-title {
+        font-size: 2rem;
+    }
+
+    .pricing-section .current-price {
+        font-size: 2rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.875rem;
+    }
+
+    .trust-signals {
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1.5rem;
+    }
+
+    .main-image {
+        min-height: 400px;
+        padding: 3rem 2rem;
+    }
+
+    .main-image svg {
+        width: 240px;
+        height: 240px;
+    }
+
+    .related-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .related-card {
+        padding: 1.25rem;
+    }
+}
