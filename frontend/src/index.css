@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply text-foreground;
+        background-color: white;
+        background-image: radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.15), transparent 60%), url('/background.png');
+        background-size: cover;
+        background-position: center bottom;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    #root {
+        min-height: 100vh;
+    }
+}
+
+@layer components {
+    .card {
+        @apply bg-background-elevated border border-border rounded-lg p-4 hover:border-border-hover transition-colors;
+    }
+
+    .btn-primary {
+        @apply bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-md transition-colors font-medium;
+    }
+
+    .btn-secondary {
+        @apply bg-background-elevated hover:bg-background-hover border border-border hover:border-border-hover text-foreground px-4 py-2 rounded-md transition-colors font-medium;
+    }
+
+    .input {
+        @apply bg-background-elevated border border-border rounded-md px-3 py-2 text-foreground focus:border-accent focus:outline-none transition-colors;
+    }
+}
