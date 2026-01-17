@@ -198,17 +198,21 @@ class ViewObjectTracker:
                     state['last_update_time'] = current_time
                     state['best_confidence'] = det.get('confidence', 0.0)
 
-                    # Re-register with movement detector (new "home" position)
+                    # Check if already registered in movement detector
                     if bbox is not None and state['object_id'] is not None:
-                        self.movement_detector.register_object(
-                            current_view, class_name, state['object_id'], bbox
-                        )
+                        existing_state = self.movement_detector.get_object_state(current_view, class_name)
+                        if existing_state is None:
+                            # First time only - register with movement detector
+                            self.movement_detector.register_object(
+                                current_view, class_name, state['object_id'], bbox
+                            )
+                        # else: Already registered, keep existing home position
 
                     actions.append((det, 'update_present', state['object_id']))
                 else:
                     # Already present and tracked - update movement detection
-                    # Only track movement with REAL depth to avoid false positives
-                    if bbox is not None and state['object_id'] is not None and depth_source == 'real':
+                    # Track movement using 2D bbox (works regardless of depth quality)
+                    if bbox is not None and state['object_id'] is not None:
                         movement_state = self.movement_detector.update_position(
                             current_view, class_name, bbox
                         )
