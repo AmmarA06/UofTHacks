@@ -35,7 +35,7 @@ class RemoteGroundingDinoDetector:
 
         # Default endpoint - can be overridden
         if endpoint is None:
-            self.endpoint = "https://es59uja7feopss-8000.proxy.runpod.net/run"
+            self.endpoint = "https://8uuk17sozer72w-8000.proxy.runpod.net/run"
         else:
             self.endpoint = endpoint
 
