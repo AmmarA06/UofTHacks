@@ -308,6 +308,17 @@ async def get_statistics():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/detections/recent")
+async def get_recent_detections(limit: int = 20):
+    """Get recent detection events with object information"""
+    try:
+        detections = db.get_recent_detections(limit)
+        return detections
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # === CLASS MANAGEMENT ENDPOINTS ===
 
 class ClassCreateRequest(BaseModel):

@@ -17,6 +17,11 @@ export const statsAPI = {
   getSummary: () => api.get('/api/stats/summary'),
 };
 
+// Detections endpoints
+export const detectionsAPI = {
+  getRecent: (limit = 20) => api.get('/api/detections/recent', { params: { limit } }),
+};
+
 // Classes endpoints
 export const classesAPI = {
   getAll: (params = {}) => api.get('/api/classes', { params }),
@@ -48,4 +53,5 @@ export default {
   stats: statsAPI,
   classes: classesAPI,
   groups: groupsAPI,
+  detections: detectionsAPI,
 };

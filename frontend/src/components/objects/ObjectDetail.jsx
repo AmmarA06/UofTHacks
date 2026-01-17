@@ -79,7 +79,7 @@ export function ObjectDetail({ object, isOpen, onClose }) {
         {/* Header Section with Thumbnail and Title */}
         <div className="flex flex-col md:flex-row gap-6">
           {/* Thumbnail */}
-          <div className="relative w-full md:w-1/2 aspect-[4/3] bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+          <div className="relative w-full md:w-1/2 aspect-[4/3] bg-gray-50 rounded-xl overflow-hidden border border-gray-100 shadow-sm flex items-center justify-center">
             {loadingThumbnail ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                 <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mb-2"></div>
@@ -89,7 +89,7 @@ export function ObjectDetail({ object, isOpen, onClose }) {
               <img
                 src={thumbnail}
                 alt={object.class_name}
-                className="w-full h-full object-cover"
+                className="max-w-full max-h-full object-contain"
               />
             ) : thumbnailError ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-red-400">

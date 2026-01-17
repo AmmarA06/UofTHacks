@@ -457,6 +457,32 @@ class VisualDatabase:
             'class_distribution': class_distribution
         }
 
+    def get_recent_detections(self, limit: int = 20) -> List[Dict]:
+        """
+        Get recent detection events with object information.
+        
+        Args:
+            limit: Maximum number of detections to return (default: 20)
+        
+        Returns:
+            List of detection dicts with object info, ordered by most recent first
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT 
+                d.detection_id,
+                d.object_id,
+                d.timestamp,
+                d.confidence,
+                o.class_name,
+                o.is_present
+            FROM detections d
+            JOIN objects o ON d.object_id = o.object_id
+            ORDER BY d.timestamp DESC
+            LIMIT ?
+        """, (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+
     def mark_absent_objects(self, timeout_seconds: float = 30.0):
         """
         Mark objects as absent if not seen for timeout_seconds.
