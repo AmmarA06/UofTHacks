@@ -1,6 +1,6 @@
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-export function SalesChart({ data, title = "Sales Performance" }) {
+export function SalesChart({ data, title = "Sales Performance (Event-Based)" }) {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       <h3 className="text-lg font-bold text-gray-800 mb-4">{title}</h3>
@@ -18,11 +18,25 @@ export function SalesChart({ data, title = "Sales Performance" }) {
             labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           />
           <Legend />
-          <Area type="monotone" dataKey="views" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} name="Views" />
-          <Area type="monotone" dataKey="addToCart" stackId="2" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Add to Cart" />
-          <Area type="monotone" dataKey="purchases" stackId="3" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} name="Purchases" />
+          <Area type="monotone" dataKey="windowShopped" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} name="Window Shopped" />
+          <Area type="monotone" dataKey="abandoned" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} name="Abandoned" />
+          <Area type="monotone" dataKey="purchased" stackId="3" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} name="Purchased" />
         </AreaChart>
       </ResponsiveContainer>
+      <div className="mt-4 text-xs text-gray-600 flex items-center gap-4 flex-wrap">
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+          PRODUCT_WINDOW_SHOPPED
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+          PRODUCT_ABANDONED
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-purple-500 rounded-full"></span>
+          PRODUCT_PURCHASED
+        </span>
+      </div>
     </div>
   );
 }

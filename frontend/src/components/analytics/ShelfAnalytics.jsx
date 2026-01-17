@@ -16,6 +16,7 @@ export function ShelfAnalytics({ shelf, onClose }) {
   const funnelData = mockAnalytics.getFunnelData(productType, shelf.id);
   const cohortData = mockAnalytics.getCohortData(productType);
   const churnData = mockAnalytics.getChurnData(productType);
+  const flowData = mockAnalytics.getCustomerFlow(productType);
   const stats = mockAnalytics.getSummaryStats(productType);
   
   const productName = productType === 'cell_phone' ? 'Cell Phones' : 'Water Bottles';
@@ -77,8 +78,9 @@ export function ShelfAnalytics({ shelf, onClose }) {
                       <Eye size={24} className="text-blue-600" />
                     </div>
                     <div>
-                      <div className="text-sm text-gray-600">Total Views</div>
-                      <div className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">Window Shopped</div>
+                      <div className="text-2xl font-bold text-gray-900">{stats.totalWindowShopped.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">PRODUCT_WINDOW_SHOPPED</div>
                     </div>
                   </div>
                 </div>
@@ -89,8 +91,9 @@ export function ShelfAnalytics({ shelf, onClose }) {
                       <ShoppingCart size={24} className="text-green-600" />
                     </div>
                     <div>
-                      <div className="text-sm text-gray-600">Total Sales</div>
-                      <div className="text-2xl font-bold text-gray-900">{stats.totalPurchases.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">Purchased</div>
+                      <div className="text-2xl font-bold text-gray-900">{stats.totalPurchased.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">PRODUCT_PURCHASED</div>
                     </div>
                   </div>
                 </div>
@@ -115,6 +118,20 @@ export function ShelfAnalytics({ shelf, onClose }) {
                     <div>
                       <div className="text-sm text-gray-600">Conversion</div>
                       <div className="text-2xl font-bold text-gray-900">{stats.conversionRate}%</div>
+                      <div className="text-xs text-gray-500">Window shop → Purchase</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-red-100 rounded-lg">
+                      <TrendingUp size={24} className="text-red-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600">Abandoned</div>
+                      <div className="text-2xl font-bold text-gray-900">{stats.totalAbandoned.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">PRODUCT_ABANDONED</div>
                     </div>
                   </div>
                 </div>
@@ -160,7 +177,7 @@ export function ShelfAnalytics({ shelf, onClose }) {
           )}
           
           {activeTab === 'cohorts' && (
-            <CohortAnalysis data={cohortData} title={`${productName} Customer Cohorts`} />
+            <CohortAnalysis data={cohortData} flowData={flowData} title={`${productName} Customer Journey & Cohorts`} />
           )}
           
           {activeTab === 'churn' && (

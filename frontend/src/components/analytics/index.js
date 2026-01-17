@@ -4,3 +4,4 @@ export { CohortAnalysis } from './CohortAnalysis';
 export { ChurnAnalysis } from './ChurnAnalysis';
 export { ShelfAnalytics } from './ShelfAnalytics';
 export { OverviewAnalytics } from './OverviewAnalytics';
+export { CustomerFlowChart } from './CustomerFlowChart';
