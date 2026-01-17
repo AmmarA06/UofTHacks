@@ -228,25 +228,43 @@ export function LandingPage() {
                         </a>
                     </div>
 
-                    <div className="bg-[#f3f3f3] rounded-2xl p-10 lg:p-12 flex items-center justify-center min-h-[400px]">
-                        <div className="grid grid-cols-12 gap-2.5">
-                            {Array.from({ length: 120 }).map((_, i) => {
-                                const row = Math.floor(i / 12);
-                                const col = i % 12;
-                                const centerX = 6;
-                                const centerY = 5;
+                    <div className="bg-[#f3f3f3] rounded-2xl p-8 flex items-center justify-center min-h-[400px] overflow-hidden">
+                        <div className="grid grid-cols-10 gap-3 w-full max-w-[320px]">
+                            {Array.from({ length: 100 }).map((_, i) => {
+                                const row = Math.floor(i / 10);
+                                const col = i % 10;
+                                const centerX = 4.5;
+                                const centerY = 4.5;
                                 const dist = Math.sqrt(Math.pow(row - centerY, 2) + Math.pow(col - centerX, 2));
-                                const inCircle = dist < 4.5;
-                                const opacity = inCircle ? (1 - dist * 0.15) : 0.08;
+                                const maxDist = Math.sqrt(2 * Math.pow(4.5, 2));
+                                const normalizedDist = dist / maxDist;
+                                const baseOpacity = 1 - normalizedDist * 0.7;
+                                const animationDelay = dist * 0.1;
+
                                 return (
                                     <div
                                         key={i}
-                                        className="w-2 h-2 rounded-full bg-[#1a1a1a]"
-                                        style={{ opacity: Math.max(0.08, opacity) }}
+                                        className="aspect-square rounded-full bg-[#1a1a1a]"
+                                        style={{
+                                            opacity: Math.max(0.1, baseOpacity),
+                                            animation: `pulse-dot 2.5s ease-in-out ${animationDelay}s infinite`,
+                                        }}
                                     />
                                 );
                             })}
                         </div>
+                        <style>{`
+                            @keyframes pulse-dot {
+                                0%, 100% { 
+                                    transform: scale(1); 
+                                    opacity: var(--base-opacity, 0.3);
+                                }
+                                50% { 
+                                    transform: scale(1.15); 
+                                    opacity: 1;
+                                }
+                            }
+                        `}</style>
                     </div>
                 </div>
             </section>
