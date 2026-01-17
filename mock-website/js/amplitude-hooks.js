@@ -134,8 +134,6 @@
                 addToCartBtn.dataset.productPrice = discountedPrice;
             }
 
-            // Log for debugging
-            console.log(`[AmplitudeHooks] Applied ${(discountPercent * 100).toFixed(0)}% discount to ${productId}: $${basePrice} → $${discountedPrice}`);
 
             // Dispatch custom event for tracking
             this._dispatchEvent('amp:discount-applied', {
@@ -207,8 +205,6 @@
             badgeEl.textContent = message;
             badgeEl.style.display = 'block';
             badgeEl.className = `product-badge amp-product-badge urgency-${type}`;
-
-            console.log(`[AmplitudeHooks] Showing urgency badge on ${productId}: ${message}`);
 
             this._dispatchEvent('amp:urgency-shown', { productId, type, message });
         },
@@ -286,8 +282,6 @@
             if (options.duration) {
                 setTimeout(() => this.hideAnnouncement(), options.duration);
             }
-
-            console.log(`[AmplitudeHooks] Showing announcement: ${message}`);
         },
 
         /**
@@ -337,8 +331,6 @@
                 feedEl.removeChild(feedEl.lastChild);
             }
 
-            console.log(`[AmplitudeHooks] Added social proof: ${product.name} purchased in ${city}`);
-
             this._dispatchEvent('amp:social-proof-added', { productId, city, product: product.name });
         },
 
@@ -347,7 +339,6 @@
          */
         updateViewersCount: function (productId, count) {
             // This could update a viewers badge on the product
-            console.log(`[AmplitudeHooks] ${count} people viewing ${productId}`);
         },
 
         /**
@@ -362,8 +353,6 @@
                     card.classList.add('amp-highlight');
                 }
             });
-
-            console.log(`[AmplitudeHooks] Showing cross-sell for ${purchasedProductId}:`, recommendedProductIds);
         },
 
         /**
@@ -375,7 +364,6 @@
          * @param {object} eventData - Additional event data
          */
         sendEvent: function (eventType, productId, eventData = {}) {
-            console.log(`[AmplitudeHooks] Sending event: ${eventType} for ${productId}`);
             this.trackEvent(eventType, productId, eventData);
         },
 
@@ -464,9 +452,10 @@
             // Use the Amplitude SDK
             if (window.amplitude && typeof window.amplitude.track === 'function') {
                 window.amplitude.track(eventType, eventProperties);
-                console.log(`[AmplitudeHooks] Tracked to Amplitude: ${eventType}`, eventProperties);
+                console.log(`[Amplitude] Event sent: ${eventType}`);
+                console.log('[Amplitude] Payload:', JSON.stringify(eventProperties, null, 2));
             } else {
-                console.warn('[AmplitudeHooks] Amplitude SDK not available');
+                console.error('[Amplitude] SDK not available');
             }
 
             this._dispatchEvent('amp:event-tracked', { eventType, productId, properties: eventProperties });
@@ -478,8 +467,6 @@
     // =====================================================
 
     document.addEventListener('DOMContentLoaded', function () {
-        console.log('[AmplitudeHooks] Initialized. Available methods:', Object.keys(window.AmplitudeHooks));
-
         // Set up announcement bar close button
         const closeBtn = document.getElementById('announcement-close');
         if (closeBtn) {
