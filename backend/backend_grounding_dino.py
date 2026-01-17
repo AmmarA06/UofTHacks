@@ -205,6 +205,16 @@ class GroundingDinoSystem:
         # Get current servo view angle
         current_view = self.current_pan
 
+        # Inject person bbox into detections for proximity tracking (WINDOW_SHOPPED)
+        # Find the person detection if any
+        person_det = next((d for d in detections if d.get('class_name') == 'person'), None)
+        person_bbox = person_det.get('bbox') if person_det else None
+
+        # Add person_bbox to all non-person detections
+        for det in detections:
+            if det.get('class_name') != 'person':
+                det['person_bbox'] = person_bbox
+
         # Update view tracker - returns actions for each detection
         # Tracker will use last known position for detections without depth
         tracker_actions = self.view_tracker.update(current_view, detections)

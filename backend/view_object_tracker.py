@@ -217,6 +217,14 @@ class ViewObjectTracker:
                             det['is_moved'] = movement_state.is_moved
                             det['behavioral_state'] = movement_state.behavioral_state.value
 
+                    # Track person proximity for WINDOW_SHOPPED
+                    # (person_bbox is injected into detections by the main loop)
+                    if bbox is not None and class_name != 'person':
+                        person_bbox = det.get('person_bbox')
+                        self.movement_detector.update_person_proximity(
+                            current_view, class_name, bbox, person_bbox
+                        )
+
                     # Check if we need periodic update
                     current_confidence = det.get('confidence', 0.0)
                     time_since_update = current_time - state['last_update_time']
@@ -253,8 +261,9 @@ class ViewObjectTracker:
                     # Mark as absent (don't delete from state - keep tracking in case it comes back)
                     state['is_present'] = False
                     if state['in_db'] and state['object_id'] is not None:
-                        # Trigger EXIT behavioral event in movement detector
-                        exit_event = self.movement_detector.handle_exit(current_view, class_name)
+                        # Trigger EXIT behavioral event with person proximity tracking
+                        # This uses the new logic: person_triggered for WINDOW_SHOPPED
+                        exit_event = self.movement_detector.handle_exit_with_person(current_view, class_name)
                         if exit_event:
                             self.pending_behavioral_events.append(exit_event)
 
