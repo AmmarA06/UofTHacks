@@ -456,7 +456,7 @@
                 product_category: product.category,
                 price: product.basePrice,
                 sku: product.sku,
-                Page_URL: 'https://amp-mock-site.vercel.app/',
+                Page_URL: 'https://uof-t-hacks-eight.vercel.app/',
                 ...properties,
                 ...(instructions && { instructions }) // Add instructions if present
             };
