@@ -285,6 +285,9 @@ class GroundingDinoSystem:
         for view_angle, class_name, object_id in pending_absent:
             self.db.mark_object_absent(object_id)
 
+        # Check for CART_ABANDONED timeouts (objects moved for 4+ seconds without EXIT)
+        self.view_tracker.check_cart_abandoned_timeouts()
+
         # Process behavioral events (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
         behavioral_events = self.view_tracker.get_pending_behavioral_events()
         for event in behavioral_events:

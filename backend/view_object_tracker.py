@@ -331,6 +331,25 @@ class ViewObjectTracker:
         self.pending_behavioral_events.clear()
         return all_events
 
+    def check_cart_abandoned_timeouts(self) -> List[Dict]:
+        """
+        Check for CART_ABANDONED timeouts.
+
+        CART_ABANDONED triggers when:
+        - Object has isMoved=True (was picked up/moved)
+        - 4 seconds have passed since moved_time
+        - Object has NOT exited (still being tracked)
+
+        Should be called periodically (e.g., every frame/update cycle).
+
+        Returns:
+            List of CART_ABANDONED events for objects that timed out
+        """
+        events = self.movement_detector.check_cart_abandoned_timeouts()
+        # Add to pending events for consumption
+        self.pending_behavioral_events.extend(events)
+        return events
+
     def set_movement_threshold(self, percent: float):
         """
         Update the movement threshold percentage.
