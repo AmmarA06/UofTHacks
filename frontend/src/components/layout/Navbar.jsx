@@ -1,15 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Box, Boxes, Tags } from 'lucide-react';
+import { Home, Box, Tags, Boxes } from 'lucide-react';
 import { clsx } from 'clsx';
-
-// Identify logo - matches landing page
-const IdentifyLogo = ({ className = "" }) => (
-    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2.5" />
-        <circle cx="16" cy="16" r="6" fill="currentColor" />
-        <circle cx="16" cy="16" r="2" fill="white" />
-    </svg>
-);
 
 export function Navbar() {
     const location = useLocation();
@@ -22,45 +13,41 @@ export function Navbar() {
     ];
 
     return (
-        <nav className="h-14 border-b border-gray-200/60 bg-white/90 backdrop-blur-md sticky top-0 z-50 w-full">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full">
+        <nav className="h-20 border-b border-gray-200/60 bg-white/90 backdrop-blur-md sticky top-0 z-50 w-full px-6 lg:px-12">
+            <div className="max-w-7xl mx-auto h-full">
                 <div className="flex items-center justify-between h-full">
-                    {/* Logo Section */}
-                    <div className="flex items-center gap-10">
-                        <Link to="/" className="flex items-center">
-                            <IdentifyLogo className="text-[#1a1a1a]" />
-                        </Link>
+                    {/* Left - Logo */}
+                    <Link to="/" className="flex items-center">
+                        <img src="/new_logo.png" alt="Identify" className="h-14 w-auto" />
+                    </Link>
 
-                        {/* Navigation Links */}
-                        <div className="hidden md:flex items-center gap-1">
-                            {navItems.map((item) => {
-                                const isActive = location.pathname === item.path;
-                                const Icon = item.icon;
-                                return (
-                                    <Link
-                                        key={item.path}
-                                        to={item.path}
-                                        className={clsx(
-                                            'relative flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200',
-                                            isActive
-                                                ? 'text-[#1a1a1a] bg-[#f3f3f3]'
-                                                : 'text-gray-500 hover:text-[#1a1a1a] hover:bg-[#f8f8f8]'
-                                        )}
-                                    >
-                                        <Icon size={15} strokeWidth={2} />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                    {/* Center - Navigation */}
+                    <div className="hidden md:flex items-center gap-1 bg-[#f3f3f3] rounded-full p-1 absolute left-1/2 -translate-x-1/2">
+                        {navItems.map((item) => {
+                            const isActive = location.pathname === item.path;
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={clsx(
+                                        'flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all',
+                                        isActive
+                                            ? 'bg-white text-[#1a1a1a] shadow-sm'
+                                            : 'text-gray-500 hover:text-[#1a1a1a]'
+                                    )}
+                                >
+                                    <Icon size={14} />
+                                    <span>{item.label}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
 
-                    {/* Right side */}
-                    <div className="flex items-center gap-4">
-                        <Link to="/" className="text-[14px] text-gray-500 hover:text-[#1a1a1a] transition-colors">
-                            Back to Home
-                        </Link>
-                    </div>
+                    {/* Right - Back to Home */}
+                    <Link to="/" className="text-[13px] text-gray-500 hover:text-[#1a1a1a] transition-colors">
+                        Back to Home
+                    </Link>
                 </div>
             </div>
         </nav>

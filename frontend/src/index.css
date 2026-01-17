@@ -7,24 +7,13 @@
         scroll-behavior: smooth;
     }
 
-    * {
-        @apply border-border;
-    }
-
     body {
-        @apply text-foreground bg-background;
-        background-image:
-            radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.12), transparent 60%),
-            radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.08), transparent 60%),
-            radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.05), transparent 80%);
-        background-size: cover;
-        background-position: center bottom;
-        background-attachment: fixed;
-        background-repeat: no-repeat;
         margin: 0;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        background-color: #fafafa;
+        color: #1a1a1a;
     }
 
     #root {
@@ -34,25 +23,18 @@
 
 @layer components {
     .card {
-        @apply bg-background-card border border-border rounded-lg p-4
-               shadow-sm hover:shadow-md hover:border-border-hover
-               transition-all duration-200;
+        @apply bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200;
     }
 
     .btn-primary {
-        @apply bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-md
-               transition-all duration-200 font-medium shadow-sm hover:shadow;
+        @apply bg-[#1a1a1a] hover:bg-black text-white px-4 py-2 rounded-full transition-all duration-200 font-medium;
     }
 
     .btn-secondary {
-        @apply bg-background-elevated hover:bg-background-hover border border-border
-               hover:border-border-hover text-foreground px-4 py-2 rounded-md
-               transition-all duration-200 font-medium shadow-sm;
+        @apply bg-[#f3f3f3] hover:bg-[#e8e8e8] border border-gray-200 hover:border-gray-300 text-[#1a1a1a] px-4 py-2 rounded-full transition-all duration-200 font-medium;
     }
 
     .input {
-        @apply bg-background-elevated border border-border rounded-md px-3 py-2
-               text-foreground focus:border-accent focus:outline-none focus:ring-2
-               focus:ring-accent/20 transition-all duration-200 shadow-sm;
+        @apply bg-white border border-gray-200 rounded-xl px-3 py-2 text-[#1a1a1a] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all duration-200;
     }
 }
