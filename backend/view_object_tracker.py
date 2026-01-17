@@ -59,7 +59,10 @@ class ViewObjectTracker:
         #     'last_update_time': timestamp,  # When we last updated DB
         #     'best_confidence': float,        # Best confidence seen
         #     'last_known_position_3d': tuple or None,  # For tracking when depth unavailable
-        #     'last_bbox': tuple or None       # For 2D matching fallback
+        #     'last_real_depth': float or None,         # Last measured REAL depth (not estimated)
+        #     'has_ever_had_real_depth': bool,          # Ever had real depth measurement
+        #     'depth_history': list,                    # Recent real depth measurements
+        #     'last_bbox': tuple or None                # For 2D matching fallback
         # }}}
         self.view_states = {view: {} for view in views}
 
@@ -80,6 +83,7 @@ class ViewObjectTracker:
         print(f"[ViewTracker] Disappear timeout: {disappear_timeout}s")
         print(f"[ViewTracker] Update interval: {update_interval}s, quality threshold: +{quality_threshold}")
         print(f"[ViewTracker] Movement threshold: {movement_threshold_percent}% of frame dimensions")
+        print(f"[ViewTracker] ALWAYS-TRACK MODE: Objects tracked even without depth (estimation enabled)")
 
     def update(self, current_view: int, detections: List[Dict]) -> List[Tuple[Dict, str, Optional[int]]]:
         """
@@ -115,9 +119,10 @@ class ViewObjectTracker:
 
         # Process detected objects
         for class_name, det in class_detections.items():
-            # Extract position info (may be None)
+            # Extract position info (may be None initially)
             center_3d = det.get('center_3d')
             bbox = det.get('bbox')
+            depth_source = det.get('depth_source', 'real')  # Track if depth is real or estimated
             
             if class_name not in view_state:
                 # First time seeing this class at this view - create new entry
@@ -130,18 +135,25 @@ class ViewObjectTracker:
                     'detection_count': 1,
                     'last_update_time': current_time,
                     'best_confidence': det.get('confidence', 0.0),
-                    'last_known_position_3d': center_3d,  # May be None initially
+                    'last_known_position_3d': center_3d if center_3d else None,
+                    'last_real_depth': None,  # No real depth yet
+                    'has_ever_had_real_depth': False,
+                    'depth_history': [],
                     'last_bbox': bbox
                 }
                 
-                # Inject last known position for database (in case depth is missing)
-                if center_3d is None:
-                    det['last_known_position_3d'] = None
-                    print(f"  [View {current_view}°] NEW: {class_name} (NO DEPTH - will retry)")
-                else:
-                    det['last_known_position_3d'] = center_3d
-                    print(f"  [View {current_view}°] NEW: {class_name} (first detection)")
+                # Inject last known position for database (always available now)
+                det['last_known_position_3d'] = center_3d
                 
+                # Mark depth source
+                if center_3d:
+                    det['depth_source'] = depth_source
+                    print(f"  [View {current_view}°] NEW: {class_name} (first detection, depth={depth_source})")
+                else:
+                    det['depth_source'] = 'unknown'
+                    print(f"  [View {current_view}°] NEW: {class_name} (no position available)")
+                
+                # ALWAYS add to database (even with estimated position)
                 actions.append((det, 'add_to_db', None))
             else:
                 # Seen before at this view
@@ -149,9 +161,23 @@ class ViewObjectTracker:
                 state['last_seen_time'] = current_time
                 state['detection_count'] += 1
 
-                # Update last known position if we have valid depth
+                # Update depth tracking
                 if center_3d is not None:
                     state['last_known_position_3d'] = center_3d
+                    
+                    # Track real depth measurements
+                    if depth_source == 'real':
+                        # Extract depth from z-coordinate
+                        _, _, z = center_3d
+                        state['last_real_depth'] = z
+                        state['has_ever_had_real_depth'] = True
+                        
+                        # Keep history of last 5 real depths for averaging
+                        if 'depth_history' not in state:
+                            state['depth_history'] = []
+                        state['depth_history'].append(z)
+                        if len(state['depth_history']) > 5:
+                            state['depth_history'].pop(0)
 
                 # Update bbox
                 if bbox is not None:
@@ -159,17 +185,15 @@ class ViewObjectTracker:
 
                 # Inject last known position into detection (for database fallback)
                 det['last_known_position_3d'] = state['last_known_position_3d']
+                det['depth_source'] = depth_source
 
                 if not state['in_db']:
-                    # Hasn't been added to DB yet (shouldn't happen, but handle gracefully)
-                    if center_3d is None and state['last_known_position_3d'] is None:
-                        print(f"  [View {current_view}°] SKIP: {class_name} (still no depth, waiting...)")
-                        continue  # Wait until we get valid depth
-                    print(f"  [View {current_view}°] RETRY: {class_name} (not yet in DB)")
+                    # Hasn't been added to DB yet - ALWAYS try to add now
+                    print(f"  [View {current_view}°] RETRY: {class_name} (not yet in DB, depth={depth_source})")
                     actions.append((det, 'add_to_db', None))
                 elif not state['is_present']:
                     # Was absent, now present again - update existing DB entry
-                    print(f"  [View {current_view}°] REAPPEAR: {class_name} (was absent, now present)")
+                    print(f"  [View {current_view}°] REAPPEAR: {class_name} (was absent, now present, depth={depth_source})")
                     state['is_present'] = True
                     state['last_update_time'] = current_time
                     state['best_confidence'] = det.get('confidence', 0.0)
@@ -183,7 +207,8 @@ class ViewObjectTracker:
                     actions.append((det, 'update_present', state['object_id']))
                 else:
                     # Already present and tracked - update movement detection
-                    if bbox is not None and state['object_id'] is not None:
+                    # Only track movement with REAL depth to avoid false positives
+                    if bbox is not None and state['object_id'] is not None and depth_source == 'real':
                         movement_state = self.movement_detector.update_position(
                             current_view, class_name, bbox
                         )

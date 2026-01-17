@@ -35,7 +35,7 @@ class RemoteGroundingDinoDetector:
 
         # Default endpoint - can be overridden
         if endpoint is None:
-            self.endpoint = "https://8uuk17sozer72w-8000.proxy.runpod.net/run"
+            self.endpoint = "https://q9fze78fypvkh2-8000.proxy.runpod.net/run"
         else:
             self.endpoint = endpoint
 
@@ -71,6 +71,7 @@ class RemoteGroundingDinoDetector:
         """
         Main detection method - compatible with backend.py
         Non-blocking: sends frame to GPU async, returns cached results immediately.
+        ALWAYS-TRACK MODE: Estimates depth when unavailable, never skips objects.
 
         Args:
             rgb_frame: RGB frame from Kinect (H, W, 3)
@@ -100,7 +101,7 @@ class RemoteGroundingDinoDetector:
             print(f"⚠ Detection error: {error}")
             return [], is_new
 
-        # Add 3D information using depth frame
+        # Add 3D information using depth frame (with estimation fallback)
         for det in detections:
             cx, cy = det['center']
             det['center_2d'] = (cx, cy)
@@ -108,18 +109,40 @@ class RemoteGroundingDinoDetector:
             # Map color coordinates to depth coordinates
             depth_x, depth_y = kinect.map_color_to_depth(cx, cy)
 
-            # Get depth value
+            # Try to get real depth value
+            depth_mm = None
+            depth_source = 'unknown'
+            
             if 0 <= depth_y < depth_frame.shape[0] and 0 <= depth_x < depth_frame.shape[1]:
                 depth_mm = depth_frame[depth_y, depth_x]
 
-                if depth_mm > 0:
-                    # Convert to 3D world coordinates (with pan_angle transform)
-                    center_3d = kinect.pixel_to_3d(depth_x, depth_y, depth_mm, pan_angle=pan_angle)
-                    det['center_3d'] = center_3d
-                else:
-                    det['center_3d'] = None
+            if depth_mm and depth_mm > 0:
+                # Real depth available - use it
+                center_3d = kinect.pixel_to_3d(depth_x, depth_y, depth_mm, pan_angle=pan_angle)
+                det['center_3d'] = center_3d
+                det['depth_source'] = 'real'
             else:
-                det['center_3d'] = None
+                # No depth available - ESTIMATE IT (never skip!)
+                # Use bbox and class name for intelligent estimation
+                bbox = det.get('bbox')
+                class_name = det.get('class_name')
+                
+                if bbox:
+                    # Estimate depth using kinect's estimation method
+                    estimated_depth = kinect.estimate_depth(
+                        bbox=bbox,
+                        class_name=class_name,
+                        last_known_depth=None  # Tracker will provide this via state
+                    )
+                    
+                    # Convert 2D center to 3D using estimated depth
+                    center_3d = kinect.pixel_to_3d(depth_x, depth_y, estimated_depth, pan_angle=pan_angle)
+                    det['center_3d'] = center_3d
+                    det['depth_source'] = 'estimated'
+                else:
+                    # No bbox (shouldn't happen) - set to None
+                    det['center_3d'] = None
+                    det['depth_source'] = 'unknown'
 
         return detections, is_new
 

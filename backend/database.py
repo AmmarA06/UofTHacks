@@ -151,6 +151,14 @@ class VisualDatabase:
         if 'returned_time' not in columns:
             cursor.execute("ALTER TABLE objects ADD COLUMN returned_time TEXT")
 
+        # Depth quality tracking (for estimated vs real depth)
+        if 'position_quality' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN position_quality TEXT DEFAULT 'unknown'")
+        if 'awaiting_real_depth' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN awaiting_real_depth INTEGER DEFAULT 0")
+        if 'last_real_depth_time' not in columns:
+            cursor.execute("ALTER TABLE objects ADD COLUMN last_real_depth_time TEXT")
+
 
         # Object Groups table for grouping/tagging multiple objects
         cursor.execute("""
@@ -253,9 +261,10 @@ class VisualDatabase:
     def create_object(self, detection: Dict, rgb_frame: Optional[np.ndarray] = None) -> Optional[int]:
         cursor = self.conn.cursor()
 
-        # Validate center_3d - try to use it if available, otherwise use last known position
+        # ALWAYS-TRACK MODE: Accept objects even with estimated positions
         center_3d = detection.get('center_3d')
         last_known_3d = detection.get('last_known_position_3d')
+        depth_source = detection.get('depth_source', 'unknown')
         
         # Prefer current position, fallback to last known
         if center_3d is not None and all(v is not None for v in center_3d):
@@ -264,10 +273,22 @@ class VisualDatabase:
         elif last_known_3d is not None and all(v is not None for v in last_known_3d):
             x3d, y3d, z3d = last_known_3d
             position_source = "last_known"
+            depth_source = 'estimated'  # Last known is treated as estimated
         else:
-            # No position available - cannot create object yet
-            print(f"Warning: Cannot create object '{detection['class_name']}' without any valid 3D position (waiting for depth)")
-            return None
+            # No position available at all - use a default estimated position
+            # This should rarely happen now with estimation enabled
+            print(f"Warning: Creating object '{detection['class_name']}' without position - using default")
+            x3d, y3d, z3d = (0, 0, 1200)  # Default position
+            depth_source = 'estimated'
+            position_source = "default"
+
+        # Determine position quality
+        if depth_source == 'real':
+            position_quality = 'real'
+            awaiting_real_depth = 0
+        else:
+            position_quality = 'estimated'
+            awaiting_real_depth = 1  # Flag for first real depth update
 
         # Extract thumbnail if frame provided
         thumbnail = None
@@ -289,8 +310,9 @@ class VisualDatabase:
             INSERT INTO objects (
                 class_name, class_id, avg_position_x, avg_position_y, avg_position_z,
                 first_seen, last_seen, detection_count, avg_confidence,
-                thumbnail, thumbnail_updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                thumbnail, thumbnail_updated,
+                position_quality, awaiting_real_depth, last_real_depth_time
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             detection['class_name'],
             class_id,
@@ -299,7 +321,10 @@ class VisualDatabase:
             1,
             detection['confidence'],
             thumbnail,
-            now if thumbnail else None
+            now if thumbnail else None,
+            position_quality,
+            awaiting_real_depth,
+            now if depth_source == 'real' else None
         ))
 
         object_id = cursor.lastrowid
@@ -309,7 +334,9 @@ class VisualDatabase:
 
         self.conn.commit()
         
-        if position_source == "last_known":
+        if depth_source == 'estimated':
+            print(f"  ℹ Created object {object_id} with ESTIMATED position (will update when real depth available)")
+        elif position_source == "last_known":
             print(f"  ℹ Created object {object_id} using last known position (depth unavailable)")
 
         return object_id
@@ -329,6 +356,7 @@ class VisualDatabase:
         # Try to get valid 3D position (current or last known)
         center_3d = detection.get('center_3d')
         last_known_3d = detection.get('last_known_position_3d')
+        depth_source = detection.get('depth_source', 'unknown')
         
         # Determine which position to use
         if center_3d is not None and all(v is not None for v in center_3d):
@@ -337,7 +365,7 @@ class VisualDatabase:
         elif last_known_3d is not None and all(v is not None for v in last_known_3d):
             x3d, y3d, z3d = last_known_3d
             position_available = True
-            # Note: using last known position, depth temporarily unavailable
+            depth_source = 'estimated'  # Last known is treated as estimated
         else:
             # No position at all - just update last_seen and detection count
             cursor.execute("""
@@ -348,13 +376,22 @@ class VisualDatabase:
             self.conn.commit()
             return
 
-        # Update position (Exponential Moving Average for smooth tracking)
+        # Check if this is first real depth after estimated position
+        awaiting_real_depth = obj.get('awaiting_real_depth', 0)
+        is_first_real_depth = (awaiting_real_depth == 1 and depth_source == 'real')
+
+        # Update position
         count = obj['detection_count']
 
-        # Calculate new averages using EMA
-        if obj['avg_position_x'] is None:
+        if is_first_real_depth:
+            # First real position after estimation - REPLACE entirely (don't blend)
+            new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
+            print(f"  ✓ Object {object_id}: First REAL depth received, replacing estimated position")
+        elif obj['avg_position_x'] is None:
+            # First position ever
             new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
         else:
+            # Normal EMA update for smooth tracking
             new_avg_x = self.ema_alpha * x3d + (1 - self.ema_alpha) * obj['avg_position_x']
             new_avg_y = self.ema_alpha * y3d + (1 - self.ema_alpha) * obj['avg_position_y']
             new_avg_z = self.ema_alpha * z3d + (1 - self.ema_alpha) * obj['avg_position_z']
@@ -364,6 +401,17 @@ class VisualDatabase:
             new_avg_conf = detection['confidence']
         else:
             new_avg_conf = self.ema_alpha * detection['confidence'] + (1 - self.ema_alpha) * obj['avg_confidence']
+
+        # Update depth quality fields
+        now = datetime.now().isoformat()
+        if depth_source == 'real':
+            position_quality = 'real'
+            awaiting_real_depth = 0
+            last_real_depth_time = now
+        else:
+            position_quality = 'estimated'
+            awaiting_real_depth = obj.get('awaiting_real_depth', 1)
+            last_real_depth_time = obj.get('last_real_depth_time')
 
         # Update thumbnail if rgb_frame provided (used for periodic updates)
         thumbnail_update = ""
@@ -375,6 +423,35 @@ class VisualDatabase:
                 thumbnail_params = [thumbnail, datetime.now().isoformat()]
             except Exception as e:
                 print(f"Warning: Failed to update thumbnail: {e}")
+
+        # Update object
+        cursor.execute(f"""
+            UPDATE objects SET
+                avg_position_x = ?,
+                avg_position_y = ?,
+                avg_position_z = ?,
+                last_seen = ?,
+                detection_count = ?,
+                avg_confidence = ?,
+                position_quality = ?,
+                awaiting_real_depth = ?,
+                last_real_depth_time = ?
+                {thumbnail_update}
+            WHERE object_id = ?
+        """, [
+            new_avg_x, new_avg_y, new_avg_z,
+            now,
+            count + 1,
+            new_avg_conf,
+            position_quality,
+            awaiting_real_depth,
+            last_real_depth_time
+        ] + thumbnail_params + [object_id])
+
+        # Record detection event (with actual center_3d, may be None)
+        self._record_detection(object_id, detection)
+
+        self.conn.commit()
 
         # Update object
         now = datetime.now().isoformat()
@@ -567,6 +644,91 @@ class VisualDatabase:
         # Try to get valid 3D position (current or last known)
         center_3d = detection.get('center_3d')
         last_known_3d = detection.get('last_known_position_3d')
+        depth_source = detection.get('depth_source', 'unknown')
+        
+        # Determine which position to use
+        if center_3d is not None and all(v is not None for v in center_3d):
+            x3d, y3d, z3d = center_3d
+            position_available = True
+        elif last_known_3d is not None and all(v is not None for v in last_known_3d):
+            x3d, y3d, z3d = last_known_3d
+            position_available = True
+            depth_source = 'estimated'
+        else:
+            # No valid 3D position - just update last_seen and mark present
+            cursor.execute("""
+                UPDATE objects SET last_seen = ?, is_present = 1, detection_count = detection_count + 1
+                WHERE object_id = ?
+            """, (datetime.now().isoformat(), object_id))
+            self._record_detection(object_id, detection)
+            self.conn.commit()
+            return True
+
+        # Check if this is first real depth after estimated position
+        awaiting_real_depth = obj.get('awaiting_real_depth', 0)
+        is_first_real_depth = (awaiting_real_depth == 1 and depth_source == 'real')
+
+        # Update position using EMA
+        count = obj['detection_count']
+
+        if is_first_real_depth:
+            # First real position after estimation - REPLACE entirely
+            new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
+            print(f"  ✓ Object {object_id}: First REAL depth on reappear, replacing estimated position")
+        elif obj['avg_position_x'] is None:
+            new_avg_x, new_avg_y, new_avg_z = x3d, y3d, z3d
+        else:
+            new_avg_x = self.ema_alpha * x3d + (1 - self.ema_alpha) * obj['avg_position_x']
+            new_avg_y = self.ema_alpha * y3d + (1 - self.ema_alpha) * obj['avg_position_y']
+            new_avg_z = self.ema_alpha * z3d + (1 - self.ema_alpha) * obj['avg_position_z']
+
+        # Update confidence using EMA
+        if obj['avg_confidence'] is None:
+            new_avg_conf = detection['confidence']
+        else:
+            new_avg_conf = self.ema_alpha * detection['confidence'] + (1 - self.ema_alpha) * obj['avg_confidence']
+
+        # Update depth quality fields
+        now = datetime.now().isoformat()
+        if depth_source == 'real':
+            position_quality = 'real'
+            awaiting_real_depth = 0
+            last_real_depth_time = now
+        else:
+            position_quality = 'estimated'
+            awaiting_real_depth = obj.get('awaiting_real_depth', 1)
+            last_real_depth_time = obj.get('last_real_depth_time')
+
+        # Update object
+        cursor.execute("""
+            UPDATE objects SET
+                avg_position_x = ?,
+                avg_position_y = ?,
+                avg_position_z = ?,
+                last_seen = ?,
+                detection_count = ?,
+                avg_confidence = ?,
+                is_present = 1,
+                position_quality = ?,
+                awaiting_real_depth = ?,
+                last_real_depth_time = ?
+            WHERE object_id = ?
+        """, [
+            new_avg_x, new_avg_y, new_avg_z,
+            now,
+            count + 1,
+            new_avg_conf,
+            position_quality,
+            awaiting_real_depth,
+            last_real_depth_time,
+            object_id
+        ])
+
+        # Record detection event (with actual center_3d, may be None)
+        self._record_detection(object_id, detection)
+
+        self.conn.commit()
+        return True
         
         # Determine which position to use
         if center_3d is not None and all(v is not None for v in center_3d):
