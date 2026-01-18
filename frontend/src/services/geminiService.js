@@ -25,16 +25,30 @@ async function fileToBase64(file) {
 }
 
 /**
- * Analyzes a floor plan image and identifies shelves and containers
+ * Analyzes a floor plan image using Gemini AI
  * @param {File} imageFile - The floor plan image file
  * @returns {Promise<Array>} Array of identified shelves/containers with their properties
  */
-export async function analyzeFloorPlan(imageFile) {
+export async function analyzeFloorPlanWithGemini(imageFile) {
   try {
+    // Initialize the model
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+    // Convert image to base64
+    const base64Image = await fileToBase64(imageFile);
+    
     // Get the mime type from the file
     const mimeType = imageFile.type || 'image/jpeg';
-    
-    // Create the prompt for analysis
+
+    // Prepare the image part for the API
+    const imagePart = {
+      inlineData: {
+        data: base64Image,
+        mimeType: mimeType,
+      },
+    };
+
+    // Create the prompt
     const prompt = `Analyze this floor plan image and identify ONLY shelving units and storage racks. Do NOT include doors, walls, windows, or other furniture.
 
 For each shelf/rack found, return a JSON array where each object has:
@@ -53,6 +67,70 @@ CRITICAL RULES:
 6. Double-check your coordinates - no shelf should be an extreme outlier from the others
 7. Return ONLY the JSON array with no markdown formatting, no code blocks, no backticks, no explanations
 8. Start directly with [ and end with ]`;
+
+    console.log('Analyzing floor plan with Gemini AI...');
+    
+    // Generate content with the image and prompt
+    const result = await model.generateContent([prompt, imagePart]);
+    const response = await result.response;
+    const text = response.text();
+
+    // Clean up the response text (remove any markdown code blocks if present)
+    let cleanedText = text.trim();
+    cleanedText = cleanedText.replace(/```json\s*/g, '');
+    cleanedText = cleanedText.replace(/```\s*/g, '');
+    cleanedText = cleanedText.trim();
+
+    // Parse the JSON response
+    let parsedData = JSON.parse(cleanedText);
+
+    // Validate that it's an array
+    if (!Array.isArray(parsedData)) {
+      throw new Error('Response is not an array');
+    }
+
+    // Validate the structure of each item
+    parsedData.forEach((item, index) => {
+      if (!item.id || !item.label || !item.normalizedPos || !item.scale || !item.metadata) {
+        console.warn(`Item at index ${index} is missing required fields:`, item);
+      }
+    });
+
+    // Validate and correct outlier positions
+    parsedData = validateAndCorrectPositions(parsedData);
+
+    // Ensure even number of shelves - if odd, remove the last one
+    if (parsedData.length % 2 !== 0) {
+      console.warn(`Odd number of shelves detected (${parsedData.length}). Removing last shelf to make it even.`);
+      parsedData.pop();
+    }
+
+    console.log('Gemini AI analysis complete. Detected', parsedData.length, 'shelves');
+    return parsedData;
+
+  } catch (error) {
+    console.error('Error analyzing floor plan with Gemini:', error);
+    
+    // Provide more specific error messages
+    if (error.message.includes('API key')) {
+      throw new Error('Invalid or missing Gemini API key. Please check your .env file.');
+    } else if (error instanceof SyntaxError) {
+      throw new Error('Failed to parse response from Gemini. The model did not return valid JSON.');
+    } else {
+      throw new Error(`Failed to analyze floor plan: ${error.message}`);
+    }
+  }
+}
+
+/**
+ * Analyzes a floor plan image (Quick mode with preset configuration)
+ * @param {File} imageFile - The floor plan image file
+ * @returns {Promise<Array>} Array of identified shelves/containers with their properties
+ */
+export async function analyzeFloorPlan(imageFile) {
+  try {
+    // Get the mime type from the file
+    const mimeType = imageFile.type || 'image/jpeg';
     
     console.log('Analyzing floor plan image...');
     console.log('Processing with mime type:', mimeType);
@@ -327,7 +405,7 @@ function validateAndCorrectPositions(shelves) {
  */
 export async function testConnection() {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
     const result = await model.generateContent('Hello');
     const response = await result.response;
     return !!response.text();
