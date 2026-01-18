@@ -20,19 +20,25 @@ function Shelf({ shelfData, platformSize = 50, onSelect, isSelected, cameraContr
 
   // Convert normalized position (0-1) to 3D coordinates
   // Scale based on dynamic platform size
-  const x = (shelfData.normalizedPos.x - 0.5) * 60;
-  const z = (shelfData.normalizedPos.y - 0.5) * (50 * 0.5); // 26% of platform size for depth
+  // Add null checks to prevent crashes during optimization
+  const normalizedX = shelfData.normalizedPos?.x ?? 0.5;
+  const normalizedY = shelfData.normalizedPos?.y ?? 0.5;
+  const x = (normalizedX - 0.5) * 60;
+  const z = (normalizedY - 0.5) * (50 * 0.5); // 26% of platform size for depth
   
   // Convert normalized scale to actual size (scaled with platform)
-  const scaleWidth = Math.max(shelfData.scale.w * platformSize * 1, 1.5); // Min 1.5m wide
-  const scaleDepth = Math.max(shelfData.scale.h * platformSize * 1.4, 1.5); // Min 1.5m deep
+  const scaleW = shelfData.scale?.w ?? 0.05;
+  const scaleH = shelfData.scale?.h ?? 0.05;
+  const scaleWidth = Math.max(scaleW * platformSize * 1, 1.5); // Min 1.5m wide
+  const scaleDepth = Math.max(scaleH * platformSize * 1.4, 1.5); // Min 1.5m deep
   const height = 2.5; // Height for label positioning
   
   // Model scale - adjust this based on your actual model size
   const modelScale = [scaleWidth / 2, 1, scaleDepth / 2];
 
   // Color based on inventory count and selection state
-  let color = shelfData.metadata.count === 0 ? '#fbbf24' : '#3b82f6'; // yellow if empty, blue if stocked
+  const itemCount = shelfData.metadata?.count ?? 0;
+  let color = itemCount === 0 ? '#fbbf24' : '#3b82f6'; // yellow if empty, blue if stocked
   
   // Highlight color when hovered or selected
   if (isSelected) {
@@ -142,14 +148,14 @@ function Shelf({ shelfData, platformSize = 50, onSelect, isSelected, cameraContr
       )}
       
       {/* Product Stock on Shelf */}
-      <ProductStock 
-        count={shelfData.metadata.count || 0}
+      <ProductStock
+        count={shelfData.metadata?.count || 0}
         shelfWidth={scaleWidth}
         shelfDepth={scaleDepth}
         shelfHeight={height}
-        productType={shelfData.metadata.productType || 'cell_phone'}
+        productType={shelfData.metadata?.productType || 'cell_phone'}
       />
-      
+
       {/* Label above the shelf */}
       <Text
         position={[0, height + 0.5, 0]}
@@ -160,9 +166,9 @@ function Shelf({ shelfData, platformSize = 50, onSelect, isSelected, cameraContr
         outlineWidth={0.05}
         outlineColor="#000000"
       >
-        {shelfData.label}
+        {shelfData.label || 'Shelf'}
       </Text>
-      
+
       {/* ID label */}
       <Text
         position={[0, height + 1.2, 0]}
@@ -173,21 +179,21 @@ function Shelf({ shelfData, platformSize = 50, onSelect, isSelected, cameraContr
         outlineWidth={0.03}
         outlineColor="#000000"
       >
-        {shelfData.id}
+        {shelfData.id || 'Unknown'}
       </Text>
-      
+
       {/* Item count display */}
-      {shelfData.metadata.count !== undefined && (
+      {shelfData.metadata?.count !== undefined && (
         <Text
           position={[0, height + 1.8, 0]}
           fontSize={0.4}
-          color={shelfData.metadata.count === 0 ? '#ef4444' : '#10b981'}
+          color={itemCount === 0 ? '#ef4444' : '#10b981'}
           anchorX="center"
           anchorY="middle"
           outlineWidth={0.04}
           outlineColor="#000000"
         >
-          {`${shelfData.metadata.item}: ${shelfData.metadata.count}`}
+          {`${shelfData.metadata?.item || 'Items'}: ${itemCount}`}
         </Text>
       )}
     </group>

@@ -144,9 +144,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A1",
       label: "Storage Shelf A1",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
-        count: 0
+        count: 12
       },
       normalizedPos: {
         x: 0.33,
@@ -161,9 +161,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A2",
       label: "Storage Shelf A2",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
-        count: 0
+        item: 'Cell Phones',
+        productType: 'cell_phone',
+        count: 8
       },
       normalizedPos: {
         x: 0.415,
@@ -178,7 +178,7 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A3",
       label: "Storage Shelf A3",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
         count: 0
       },
@@ -195,8 +195,8 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A4",
       label: "Storage Shelf A4",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
+        item: 'Cell Phones',
+        productType: 'cell_phone',
         count: 0
       },
       normalizedPos: {
@@ -212,7 +212,7 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A5",
       label: "Storage Shelf A5",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
         count: 0
       },
@@ -229,8 +229,8 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B1",
       label: "Storage Shelf B1",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
+        item: 'Cell Phones',
+        productType: 'cell_phone',
         count: 0
       },
       normalizedPos: {
@@ -246,7 +246,7 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B2",
       label: "Storage Shelf B2",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
         count: 0
       },
@@ -263,8 +263,8 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B3",
       label: "Storage Shelf B3",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
+        item: 'Cell Phones',
+        productType: 'cell_phone',
         count: 0
       },
       normalizedPos: {
@@ -280,9 +280,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B4",
       label: "Storage Shelf B4",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
-        count: 0
+        count: 15
       },
       normalizedPos: {
         x: 0.585,
@@ -297,9 +297,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B5",
       label: "Storage Shelf B5",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
-        count: 0
+        item: 'Cell Phones',
+        productType: 'cell_phone',
+        count: 6
       },
       normalizedPos: {
         x: 0.67,
@@ -412,5 +412,165 @@ export async function testConnection() {
   } catch (error) {
     console.error('Gemini API connection test failed:', error);
     return false;
+  }
+}
+
+/**
+ * Generate AI-powered insights explaining store optimization decisions
+ * Uses retail psychology principles to explain shelf placement recommendations
+ * @param {Object} categorizedData - Output from categorizeShelvesForOptimization
+ * @param {Object} overallStats - Overall store analytics stats
+ * @returns {Promise<Object>} AI-generated insights with explanations
+ */
+export async function generateOptimizationInsights(categorizedData, overallStats) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    const systemPrompt = `You are a retail optimization expert AI assistant specializing in store layout psychology and customer behavior analysis. Your role is to explain store shelf reorganization decisions in a clear, insightful, and actionable way.
+
+CONTEXT - RETAIL PSYCHOLOGY PRINCIPLES:
+
+1. **Anchor Items (High Dwell Time)**
+   - Products customers spend significant time examining (complex electronics, detailed labels)
+   - OPTIMAL PLACEMENT: Center or deep mid-store
+   - STRATEGY: Surround with unpopular, high-margin, or new "discovery" items
+   - WHY: Dwell time creates "borrowed attention" - while customers read labels, their peripheral vision notices adjacent items
+
+2. **Magnet Items (High Conversion)**
+   - Products with very high purchase rates once seen (essentials like milk, viral trending items)
+   - OPTIMAL PLACEMENT: Back corners or traditionally "dead zones"
+   - STRATEGY: Place at the end of paths lined with impulse/discovery items
+   - WHY: These are "destination items" - customers will seek them out, so make them walk past other merchandise
+
+3. **Risk Items (High Abandonment)**
+   - Products frequently picked up but put back (expensive luxury items, heavy products)
+   - OPTIMAL PLACEMENT: Near the front/entrance
+   - STRATEGY: Never place unpopular items nearby
+   - WHY: Customers who decide against purchase want to put items back quickly; if in back of store, they "hide" items on random shelves
+
+4. **Discovery Items (Low Visibility)**
+   - Products with low traffic and low conversion
+   - OPTIMAL PLACEMENT: Adjacent to Anchor items
+   - STRATEGY: Leverage the "borrowed attention" from high-dwell neighbors
+   - WHY: Gets exposure without dedicated marketing spend
+
+YOUR TASK:
+Analyze the provided shelf categorization data and generate insights that:
+1. Summarize what was changed and why using the principles above
+2. Explain the expected business impact
+3. Provide specific, actionable recommendations
+4. Use a professional but conversational tone
+
+OUTPUT FORMAT (JSON):
+{
+  "summary": "2-3 sentence executive summary of the optimization",
+  "keyChanges": [
+    {
+      "shelfId": "A1",
+      "className": "product_type",
+      "category": "anchor|magnet|risk|discovery|normal",
+      "action": "moved to center|moved to back|moved to front|placed near anchor",
+      "rationale": "Brief explanation using retail psychology"
+    }
+  ],
+  "expectedImpact": {
+    "conversionLift": "X-Y% expected improvement",
+    "reasoning": "Why this improvement is expected"
+  },
+  "additionalRecommendations": [
+    "Specific actionable tip 1",
+    "Specific actionable tip 2"
+  ],
+  "retailPsychologyNote": "Brief educational note about the psychology principle being applied"
+}
+
+IMPORTANT: Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the JSON.`;
+
+    // Prepare the data summary for the prompt
+    const dataSummary = {
+      totalShelves: categorizedData.shelves.length,
+      categories: {
+        anchors: categorizedData.summary.anchors.map(s => ({
+          id: s.shelfId,
+          class: s.className,
+          dwellTime: s.metrics?.dwellTime,
+          conversion: s.metrics?.conversionRate
+        })),
+        magnets: categorizedData.summary.magnets.map(s => ({
+          id: s.shelfId,
+          class: s.className,
+          conversion: s.metrics?.conversionRate
+        })),
+        risks: categorizedData.summary.risks.map(s => ({
+          id: s.shelfId,
+          class: s.className,
+          abandonmentRate: s.metrics?.abandonmentRate
+        })),
+        discovery: categorizedData.summary.discovery.map(s => ({
+          id: s.shelfId,
+          class: s.className,
+          conversion: s.metrics?.conversionRate
+        })),
+        normal: categorizedData.summary.normal.length
+      },
+      storeAverages: categorizedData.averages,
+      overallStats: {
+        totalPickups: overallStats?.totalPickups || 0,
+        totalPurchases: overallStats?.totalPurchases || 0,
+        conversionRate: overallStats?.conversionRate || 0,
+        totalAbandoned: overallStats?.totalReturns || 0
+      }
+    };
+
+    const userPrompt = `Analyze this store optimization data and generate insights:
+
+${JSON.stringify(dataSummary, null, 2)}
+
+Generate a comprehensive explanation of the optimization decisions made, following the retail psychology principles outlined. Focus on the specific shelves that were categorized and explain why their new placements will improve store performance.`;
+
+    console.log('Generating optimization insights with Gemini AI...');
+
+    const result = await model.generateContent([systemPrompt, userPrompt]);
+    const response = await result.response;
+    let text = response.text();
+
+    // Clean up response
+    text = text.trim();
+    text = text.replace(/```json\s*/g, '');
+    text = text.replace(/```\s*/g, '');
+    text = text.trim();
+
+    const insights = JSON.parse(text);
+    console.log('Optimization insights generated successfully');
+
+    return insights;
+
+  } catch (error) {
+    console.error('Error generating optimization insights:', error);
+
+    // Return fallback insights if AI fails
+    return {
+      summary: "Store layout has been optimized based on customer behavior analytics. High-conversion items moved to back zones, high-abandonment items near front, and high-dwell anchors in center positions.",
+      keyChanges: categorizedData.shelves
+        .filter(s => s.category !== 'normal')
+        .slice(0, 5)
+        .map(s => ({
+          shelfId: s.shelfId,
+          className: s.className,
+          category: s.category,
+          action: s.placement === 'back' ? 'moved to back' : s.placement === 'front' ? 'moved to front' : 'repositioned to center',
+          rationale: s.reason
+        })),
+      expectedImpact: {
+        conversionLift: "5-15% expected improvement",
+        reasoning: "Optimized placement leverages natural customer flow patterns and attention psychology"
+      },
+      additionalRecommendations: [
+        "Monitor conversion rates for repositioned items over the next 2 weeks",
+        "Consider A/B testing with select shelf positions",
+        "Update signage to guide customers toward back-zone magnet items"
+      ],
+      retailPsychologyNote: "This optimization applies the 'borrowed attention' principle - placing low-visibility items near high-dwell products to increase their exposure without additional marketing costs."
+    };
   }
 }

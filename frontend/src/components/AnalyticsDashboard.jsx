@@ -4,29 +4,38 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import ReactECharts from 'echarts-for-react';
-import { TrendingUp, ShoppingCart, Package, DollarSign, Users, Activity, X, ArrowUp, ArrowDown } from 'lucide-react';
-import { fetchOverallAnalytics, fetchSankeyData, fetchDailyTrends } from '../services/amplitudeService';
+import { TrendingUp, ShoppingCart, Package, Activity, X, ArrowUp, ArrowDown, ToggleLeft, ToggleRight, Sparkles } from 'lucide-react';
+import { fetchOverallAnalytics, fetchSankeyData, fetchDailyTrends, categorizeShelvesForOptimization, generateOptimizedLayout } from '../services/amplitudeService';
+import { generateOptimizationInsights } from '../services/geminiService';
+import OptimizationInsightsModal from './OptimizationInsightsModal';
 
 /**
  * Overall Analytics Dashboard - Shows aggregate data for all shelves
  * Displayed when no specific shelf is selected
  */
-function AnalyticsDashboard({ onClose }) {
+function AnalyticsDashboard({ onClose, shelves, onOptimizeShelves }) {
   const [analytics, setAnalytics] = useState(null);
   const [sankeyData, setSankeyData] = useState(null);
   const [dailyTrends, setDailyTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [useMock, setUseMock] = useState(false);
+
+  // Optimization state
+  const [showOptimizationModal, setShowOptimizationModal] = useState(false);
+  const [optimizationInsights, setOptimizationInsights] = useState(null);
+  const [categorizedData, setCategorizedData] = useState(null);
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
 
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
         setLoading(true);
         const [analyticsData, sankeyChartData, trendsData] = await Promise.all([
-          fetchOverallAnalytics(),
-          fetchSankeyData(),
-          fetchDailyTrends()
+          fetchOverallAnalytics(useMock),
+          fetchSankeyData(useMock),
+          fetchDailyTrends(useMock)
         ]);
         setAnalytics(analyticsData);
         setSankeyData(sankeyChartData);
@@ -49,7 +58,65 @@ function AnalyticsDashboard({ onClose }) {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [refreshKey]);
+  }, [refreshKey, useMock]);
+
+  // Handle optimization button click
+  const handleOptimizeClick = async () => {
+    if (!analytics?.shelfData) return;
+
+    setIsGeneratingInsights(true);
+    setShowOptimizationModal(true);
+
+    try {
+      // Categorize shelves based on analytics
+      const categorized = categorizeShelvesForOptimization(analytics.shelfData);
+      setCategorizedData(categorized);
+
+      // Generate AI insights
+      const insights = await generateOptimizationInsights(categorized, analytics.overallStats);
+      setOptimizationInsights(insights);
+    } catch (err) {
+      console.error('Failed to generate optimization insights:', err);
+    } finally {
+      setIsGeneratingInsights(false);
+    }
+  };
+
+  // Apply the optimization
+  const handleApplyOptimization = async () => {
+    if (!shelves || !categorizedData || !onOptimizeShelves) {
+      console.warn('Cannot apply optimization - missing data:', { shelves: !!shelves, categorizedData: !!categorizedData, onOptimizeShelves: !!onOptimizeShelves });
+      return;
+    }
+
+    try {
+      console.log('Applying optimization to', shelves.length, 'shelves');
+      const optimizedShelves = generateOptimizedLayout(shelves, categorizedData);
+      console.log('Optimized shelves:', optimizedShelves.length);
+
+      // Validate optimized shelves before applying
+      const validShelves = optimizedShelves.every(s =>
+        s && s.id && s.normalizedPos && typeof s.normalizedPos.x === 'number' && typeof s.normalizedPos.y === 'number'
+      );
+
+      if (!validShelves) {
+        console.error('Some optimized shelves have invalid data');
+        // Try to fix any issues
+        const fixedShelves = optimizedShelves.map(s => ({
+          ...s,
+          normalizedPos: s.normalizedPos || { x: 0.5, y: 0.5 }
+        }));
+        onOptimizeShelves(fixedShelves);
+      } else {
+        onOptimizeShelves(optimizedShelves);
+      }
+
+      setShowOptimizationModal(false);
+      onClose();
+    } catch (err) {
+      console.error('Error applying optimization:', err);
+    }
+  };
 
   if (loading && !analytics) {
     return (
@@ -92,9 +159,34 @@ function AnalyticsDashboard({ onClose }) {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[28px] font-medium text-[#1a1a1a] tracking-[-0.02em] mb-1">Store Analytics Overview</h1>
-              <p className="text-[14px] text-gray-500">Real-time insights across all shelves (A1-A6, B1-B6)</p>
+              <p className="text-[14px] text-gray-500">
+                {useMock ? 'Viewing mock data (A1-A6, B1-B6 with unique patterns)' : 'Real-time insights from events API'}
+              </p>
             </div>
             <div className="flex items-center gap-4">
+              {/* Optimize Store Button */}
+              <button
+                onClick={handleOptimizeClick}
+                disabled={!analytics?.shelfData || analytics.shelfData.length === 0}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[13px] font-medium transition-all bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                title="AI-powered store optimization"
+              >
+                <Sparkles size={18} />
+                Optimize Store
+              </button>
+              {/* Real/Mock Toggle */}
+              <button
+                onClick={() => setUseMock(!useMock)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
+                  useMock
+                    ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                    : 'bg-green-100 text-green-700 border border-green-200'
+                }`}
+                title={useMock ? 'Switch to real data' : 'Switch to mock data'}
+              >
+                {useMock ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                {useMock ? 'Mock Data' : 'Real Data'}
+              </button>
               <div className="w-12 h-12 bg-[#f3f3f3] rounded-xl flex items-center justify-center">
                 <Activity size={24} className="text-[#1a1a1a]" />
               </div>
@@ -110,51 +202,46 @@ function AnalyticsDashboard({ onClose }) {
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           <MetricCard
             icon={<Package size={18} />}
             label="Total Pickups"
-            value={overallStats.totalPickups.toLocaleString()}
+            value={(overallStats.totalPickups || 0).toLocaleString()}
           />
           <MetricCard
             icon={<ShoppingCart size={18} />}
             label="Purchases"
-            value={overallStats.totalPurchases.toLocaleString()}
+            value={(overallStats.totalPurchases || 0).toLocaleString()}
           />
           <MetricCard
             icon={<TrendingUp size={18} />}
             label="Conversion"
-            value={`${overallStats.conversionRate}%`}
-          />
-          <MetricCard
-            icon={<DollarSign size={18} />}
-            label="Revenue"
-            value={`$${parseFloat(overallStats.totalRevenue).toLocaleString()}`}
+            value={`${overallStats.conversionRate || 0}%`}
           />
           <MetricCard
             icon={<Package size={18} />}
             label="Abandoned"
-            value={overallStats.totalReturns.toLocaleString()}
+            value={(overallStats.totalReturns || 0).toLocaleString()}
           />
           <MetricCard
-            icon={<Users size={18} />}
-            label="Active Users"
-            value={overallStats.activeUsers.toLocaleString()}
+            icon={<Activity size={18} />}
+            label="Window Shopped"
+            value={(overallStats.totalWindowShopped || 0).toLocaleString()}
           />
         </div>
 
         {/* Event Flow Sankey Chart with Apache ECharts */}
-        {sankeyData && (
+        {sankeyData && sankeyData.links && sankeyData.links.length > 0 && (
           <div className="mb-6">
             <ChartCard title="Event Flow Analysis">
               <p className="text-[13px] text-gray-500 mb-4">
-                Flow visualization: Total Views → Products (Phone & Bottle) → Event Types (Window Shopped, Cart Abandoned, Purchased)
+                Flow visualization: Total Events → Object Classes → Event Types (Window Shopped, Cart Abandoned, Purchased, Moved)
               </p>
               <div style={{ height: '600px' }}>
                 <ReactECharts
                   option={{
                     title: {
-                      text: 'Customer Journey Flow by Product',
+                      text: 'Event Flow by Object Class',
                       left: 'center',
                       textStyle: {
                         fontSize: 16,
@@ -180,47 +267,11 @@ function AnalyticsDashboard({ onClose }) {
                         emphasis: {
                           focus: 'adjacency'
                         },
-                        data: (() => {
-                          const nodes = [];
-                          const products = ['Phone', 'Bottle'];
-
-                          // Add Total Views node (depth 0)
-                          nodes.push({
-                            name: 'Total Views',
-                            itemStyle: { color: '#1a1a1a' },
-                            depth: 0
-                          });
-
-                          // Add product nodes (depth 1)
-                          products.forEach(product => {
-                            nodes.push({
-                              name: product,
-                              itemStyle: { color: '#6b7280' },
-                              depth: 1
-                            });
-                          });
-
-                          // Add event type nodes for each product (depth 2)
-                          products.forEach(product => {
-                            nodes.push({
-                              name: `${product} - Window Shopped`,
-                              itemStyle: { color: '#3b82f6' },
-                              depth: 2
-                            });
-                            nodes.push({
-                              name: `${product} - Cart Abandoned`,
-                              itemStyle: { color: '#ef4444' },
-                              depth: 2
-                            });
-                            nodes.push({
-                              name: `${product} - Purchased`,
-                              itemStyle: { color: '#10b981' },
-                              depth: 2
-                            });
-                          });
-
-                          return nodes;
-                        })(),
+                        data: sankeyData.nodes.map((node, index) => ({
+                          name: node.name,
+                          itemStyle: { color: node.fill },
+                          depth: index === 0 ? 0 : (sankeyData.classNames?.includes(node.name.toLowerCase().replace(' ', '_')) || index <= (sankeyData.classNames?.length || 0)) ? 1 : 2
+                        })),
                         links: sankeyData.links.map(link => ({
                           source: sankeyData.nodes[link.source].name,
                           target: sankeyData.nodes[link.target].name,
@@ -231,6 +282,7 @@ function AnalyticsDashboard({ onClose }) {
                               if (targetName.includes('Window Shopped')) return 'rgba(59, 130, 246, 0.3)';
                               if (targetName.includes('Cart Abandoned')) return 'rgba(239, 68, 68, 0.3)';
                               if (targetName.includes('Purchased')) return 'rgba(16, 185, 129, 0.3)';
+                              if (targetName.includes('Moved')) return 'rgba(139, 92, 246, 0.3)';
                               return 'rgba(107, 114, 128, 0.3)';
                             })()
                           }
@@ -258,33 +310,42 @@ function AnalyticsDashboard({ onClose }) {
               </div>
 
               {/* Summary Stats */}
-              <div className="mt-6 grid grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl p-4 text-center border border-gray-300 shadow-md">
-                  <div className="text-[24px] font-medium text-gray-700">
+              <div className="mt-6 grid grid-cols-4 gap-4">
+                <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
+                  <div className="text-[24px] font-medium text-blue-600">
                     {sankeyData.links
-                      .filter(l => sankeyData.nodes[l.target].name.includes('Window Shopped'))
+                      .filter(l => sankeyData.nodes[l.target]?.name?.includes('Window Shopped'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
                     }
                   </div>
-                  <div className="text-[13px] text-gray-600 mt-1">Total Window Shopped</div>
+                  <div className="text-[13px] text-gray-600 mt-1">Window Shopped</div>
                 </div>
                 <div className="bg-red-50 rounded-xl p-4 text-center border border-red-100">
                   <div className="text-[24px] font-medium text-red-600">
                     {sankeyData.links
-                      .filter(l => sankeyData.nodes[l.target].name.includes('Cart Abandoned'))
+                      .filter(l => sankeyData.nodes[l.target]?.name?.includes('Cart Abandoned'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
                     }
                   </div>
-                  <div className="text-[13px] text-gray-600 mt-1">Total Cart Abandoned</div>
+                  <div className="text-[13px] text-gray-600 mt-1">Cart Abandoned</div>
                 </div>
                 <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
                   <div className="text-[24px] font-medium text-green-600">
                     {sankeyData.links
-                      .filter(l => sankeyData.nodes[l.target].name.includes('Purchased'))
+                      .filter(l => sankeyData.nodes[l.target]?.name?.includes('Purchased'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
                     }
                   </div>
-                  <div className="text-[13px] text-gray-600 mt-1">Total Purchased</div>
+                  <div className="text-[13px] text-gray-600 mt-1">Purchased</div>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
+                  <div className="text-[24px] font-medium text-purple-600">
+                    {sankeyData.links
+                      .filter(l => sankeyData.nodes[l.target]?.name?.includes('Moved'))
+                      .reduce((sum, link) => sum + (link.value || 0), 0)
+                    }
+                  </div>
+                  <div className="text-[13px] text-gray-600 mt-1">Moved</div>
                 </div>
               </div>
 
@@ -292,14 +353,14 @@ function AnalyticsDashboard({ onClose }) {
               <div className="mt-4 flex flex-wrap gap-4 justify-center text-[13px]">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#1a1a1a' }}></div>
-                  <span className="text-gray-600">Total Views</span>
+                  <span className="text-gray-600">Total Events</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#6b7280' }}></div>
-                  <span className="text-gray-600">Products</span>
+                  <span className="text-gray-600">Object Classes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   <span className="text-gray-600">Window Shopped</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -309,6 +370,10 @@ function AnalyticsDashboard({ onClose }) {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <span className="text-gray-600">Purchased</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-gray-600">Moved</span>
                 </div>
               </div>
             </ChartCard>
@@ -431,7 +496,7 @@ function AnalyticsDashboard({ onClose }) {
         )}
 
         {/* Category Distribution & Top Performers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* Category Distribution */}
           <ChartCard title="Category Distribution">
             <ResponsiveContainer width="100%" height={200}>
@@ -455,71 +520,90 @@ function AnalyticsDashboard({ onClose }) {
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title="Top Revenue Shelf">
-            <TopPerformer
-              data={shelfData.sort((a, b) => parseFloat(b.revenue) - parseFloat(a.revenue))[0]}
-              metric="revenue"
-              prefix="$"
-            />
-          </ChartCard>
-
-          <ChartCard title="Most Active Shelf">
-            <TopPerformer
-              data={shelfData.sort((a, b) => b.pickups - a.pickups)[0]}
-              metric="pickups"
-              prefix=""
-            />
+          <ChartCard title="Most Active Object">
+            {shelfData && shelfData.length > 0 ? (
+              <TopPerformer
+                data={[...shelfData].sort((a, b) => b.pickups - a.pickups)[0]}
+                metric="pickups"
+                prefix=""
+              />
+            ) : (
+              <div className="text-center py-4 text-gray-500">No data available</div>
+            )}
           </ChartCard>
 
           <ChartCard title="Best Conversion">
-            <TopPerformer
-              data={shelfData.sort((a, b) => parseFloat(b.conversionRate) - parseFloat(a.conversionRate))[0]}
-              metric="conversionRate"
-              suffix="%"
-            />
+            {shelfData && shelfData.length > 0 ? (
+              <TopPerformer
+                data={[...shelfData].sort((a, b) => parseFloat(b.conversionRate) - parseFloat(a.conversionRate))[0]}
+                metric="conversionRate"
+                suffix="%"
+              />
+            ) : (
+              <div className="text-center py-4 text-gray-500">No data available</div>
+            )}
           </ChartCard>
         </div>
 
-        {/* Shelf Performance Table */}
-        <ChartCard title="Shelf Performance">
+        {/* Object Performance Table */}
+        <ChartCard title="Object Performance">
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead className="bg-[#f3f3f3] border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-[#1a1a1a]">Shelf ID</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#1a1a1a]">Object ID</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#1a1a1a]">Class</th>
                   <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Pickups</th>
                   <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Purchases</th>
                   <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Abandoned</th>
+                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Window Shopped</th>
                   <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Conversion</th>
-                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Revenue</th>
                 </tr>
               </thead>
               <tbody>
-                {shelfData.map((shelf, index) => (
-                  <tr
-                    key={shelf.shelfId}
-                    className={`border-b border-gray-100 hover:bg-[#f3f3f3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}`}
-                  >
-                    <td className="px-4 py-3 font-medium text-[#1a1a1a]">{shelf.shelfId}</td>
-                    <td className="px-4 py-3 text-right text-gray-600">{shelf.pickups}</td>
-                    <td className="px-4 py-3 text-right text-green-600 font-medium">{shelf.purchases}</td>
-                    <td className="px-4 py-3 text-right text-red-500">{shelf.returns}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`px-2 py-1 rounded-full text-[12px] ${parseFloat(shelf.conversionRate) > 60 ? 'bg-green-50 text-green-700' :
-                          parseFloat(shelf.conversionRate) > 40 ? 'bg-yellow-50 text-yellow-700' :
-                            'bg-red-50 text-red-700'
-                        }`}>
-                        {shelf.conversionRate}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-[#1a1a1a]">${shelf.revenue}</td>
+                {shelfData && shelfData.length > 0 ? (
+                  shelfData.map((shelf, index) => (
+                    <tr
+                      key={shelf.shelfId}
+                      className={`border-b border-gray-100 hover:bg-[#f3f3f3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}`}
+                    >
+                      <td className="px-4 py-3 font-medium text-[#1a1a1a]">{shelf.shelfId}</td>
+                      <td className="px-4 py-3 text-gray-600">{shelf.className?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'N/A'}</td>
+                      <td className="px-4 py-3 text-right text-gray-600">{shelf.pickups || 0}</td>
+                      <td className="px-4 py-3 text-right text-green-600 font-medium">{shelf.purchases || 0}</td>
+                      <td className="px-4 py-3 text-right text-red-500">{shelf.returns || 0}</td>
+                      <td className="px-4 py-3 text-right text-blue-500">{shelf.windowShopped || 0}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className={`px-2 py-1 rounded-full text-[12px] ${parseFloat(shelf.conversionRate) > 60 ? 'bg-green-50 text-green-700' :
+                            parseFloat(shelf.conversionRate) > 40 ? 'bg-yellow-50 text-yellow-700' :
+                              'bg-red-50 text-red-700'
+                          }`}>
+                          {shelf.conversionRate}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">No event data available</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </ChartCard>
       </div>
+
+      {/* Optimization Insights Modal */}
+      {showOptimizationModal && (
+        <OptimizationInsightsModal
+          insights={optimizationInsights}
+          categorizedData={categorizedData}
+          isLoading={isGeneratingInsights}
+          onClose={() => setShowOptimizationModal(false)}
+          onApply={handleApplyOptimization}
+        />
+      )}
     </div>
   );
 }
@@ -551,18 +635,17 @@ function ChartCard({ title, children }) {
 
 // Top Performer Component
 function TopPerformer({ data, metric, prefix = '', suffix = '' }) {
+  if (!data) return <div className="text-center py-4 text-gray-500">No data</div>;
+
+  // Display class name instead of object ID
+  const displayName = data.className
+    ? data.className.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+    : data.shelfId;
+
   return (
-    <div className="text-center py-4">
-      <div className="text-[32px] font-medium text-[#1a1a1a] mb-2">
-        {data.shelfId}
-      </div>
-      <div className="text-[28px] font-medium text-[#1a1a1a]">
-        {prefix}{data[metric]}{suffix}
-      </div>
-      <div className="text-[13px] text-gray-500 mt-2">
-        {metric === 'revenue' && `${data.purchases} purchases`}
-        {metric === 'pickups' && `${data.conversionRate}% conversion`}
-        {metric === 'conversionRate' && `${data.purchases}/${data.pickups} purchases`}
+    <div className="text-center py-8">
+      <div className="text-[36px] font-medium text-[#1a1a1a]">
+        {displayName}
       </div>
     </div>
   );
