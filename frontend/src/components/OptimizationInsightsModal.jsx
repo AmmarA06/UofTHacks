@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Sparkles, ArrowRight, TrendingUp, AlertTriangle, Target, Eye, Lightbulb, CheckCircle, Loader2 } from 'lucide-react';
 
 /**
@@ -24,36 +25,50 @@ function OptimizationInsightsModal({ insights, categorizedData, isLoading, onClo
   };
 
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8 max-w-md">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center">
-              <Sparkles className="text-purple-600 animate-pulse" size={32} />
+    return createPortal(
+      <div className="fixed inset-0 z-[9999]">
+        {/* Backdrop with blur */}
+        <div className="absolute inset-0 bg-black/50" style={{ backdropFilter: 'blur(4px)' }} />
+        {/* Content */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8 max-w-md">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center">
+                <Sparkles className="text-purple-600 animate-pulse" size={32} />
+              </div>
+              <div className="text-center">
+                <h3 className="text-[18px] font-medium text-[#1a1a1a] mb-2">Analyzing Store Layout</h3>
+                <p className="text-[14px] text-gray-500">AI is generating optimization insights...</p>
+              </div>
+              <Loader2 className="animate-spin text-purple-600" size={24} />
             </div>
-            <div className="text-center">
-              <h3 className="text-[18px] font-medium text-[#1a1a1a] mb-2">Analyzing Store Layout</h3>
-              <p className="text-[14px] text-gray-500">AI is generating optimization insights...</p>
-            </div>
-            <Loader2 className="animate-spin text-purple-600" size={24} />
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   if (!insights) return null;
 
-  return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div className="min-h-screen py-8 px-4 flex items-start justify-center">
-        <div
-          className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-3xl w-full"
-          onClick={(e) => e.stopPropagation()}
-        >
+  return createPortal(
+    <div className="fixed inset-0 z-[9999]">
+      {/* Backdrop with blur - covers entire viewport */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        style={{ backdropFilter: 'blur(4px)' }}
+        onClick={onClose}
+      />
+      {/* Scrollable content container */}
+      <div
+        className="absolute inset-0 overflow-y-auto"
+        onClick={onClose}
+      >
+        <div className="min-h-full py-8 px-4 flex items-start justify-center">
+          <div
+            className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-3xl w-full my-8 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-start justify-between">
@@ -223,9 +238,11 @@ function OptimizationInsightsModal({ insights, categorizedData, isLoading, onClo
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
