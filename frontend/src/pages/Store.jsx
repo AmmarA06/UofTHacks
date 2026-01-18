@@ -17,8 +17,8 @@ function Store() {
   const cameraControlsRef = useRef();
 
   // Get current shelf data from shelves array (always up-to-date)
-  const selectedShelf = selectedShelfId 
-    ? shelves.find(s => s.id === selectedShelfId) 
+  const selectedShelf = selectedShelfId
+    ? shelves.find(s => s.id === selectedShelfId)
     : null;
 
   // Update stock for a specific shelf
@@ -27,12 +27,12 @@ function Store() {
       prevShelves.map(shelf =>
         shelf.id === shelfId
           ? {
-              ...shelf,
-              metadata: {
-                ...shelf.metadata,
-                count: Math.max(0, (shelf.metadata.count || 0) + delta)
-              }
+            ...shelf,
+            metadata: {
+              ...shelf.metadata,
+              count: Math.max(0, (shelf.metadata.count || 0) + delta)
             }
+          }
           : shelf
       )
     );
@@ -44,12 +44,12 @@ function Store() {
       prevShelves.map(shelf =>
         shelf.id === shelfId
           ? {
-              ...shelf,
-              metadata: {
-                ...shelf.metadata,
-                productType: newType
-              }
+            ...shelf,
+            metadata: {
+              ...shelf.metadata,
+              productType: newType
             }
+          }
           : shelf
       )
     );
@@ -70,13 +70,13 @@ function Store() {
   const resetToTopDownView = () => {
     if (cameraControlsRef.current && shelves.length > 0) {
       const platformSize = Math.min(20 + Math.floor(shelves.length / 5) * 3, 50);
-      
+
       cameraControlsRef.current.setLookAt(
         0, platformSize * 1.2, 0, // Camera high above
         0, 0, 0, // Looking at center
         true // Smooth transition
       );
-      
+
       // Lock camera if not in freecam mode
       if (!isFreeCam) {
         lockCamera();
@@ -112,7 +112,7 @@ function Store() {
   const toggleFreeCam = () => {
     const newFreeCamState = !isFreeCam;
     setIsFreeCam(newFreeCamState);
-    
+
     if (newFreeCamState) {
       unlockCamera();
     } else {
@@ -125,14 +125,14 @@ function Store() {
   useEffect(() => {
     if (shelves.length > 0 && cameraControlsRef.current) {
       const platformSize = Math.min(20 + Math.floor(shelves.length / 5) * 3, 50);
-      
+
       // Small delay to ensure camera controls are ready
       const timer = setTimeout(() => {
         if (cameraControlsRef.current) {
           // Set position directly first
           cameraControlsRef.current.setPosition(0, platformSize * 1.2, 0, false);
           cameraControlsRef.current.setTarget(0, 0, 0, false);
-          
+
           // Then smoothly transition
           setTimeout(() => {
             cameraControlsRef.current?.setLookAt(
@@ -140,7 +140,7 @@ function Store() {
               0, 0, 0,
               true
             );
-            
+
             // Lock camera unless in freecam mode
             if (!isFreeCam) {
               lockCamera();
@@ -148,7 +148,7 @@ function Store() {
           }, 50);
         }
       }, 200);
-      
+
       return () => clearTimeout(timer);
     }
   }, [shelves.length, isFreeCam]);
@@ -176,108 +176,97 @@ function Store() {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-64px)] overflow-hidden bg-gray-900 flex flex-col">
+    <div className="w-full h-[calc(100vh-64px)] overflow-hidden bg-[#fafafa] flex flex-col">
       {/* Header - only show when no shelves loaded */}
       {shelves.length === 0 && (
-        <>
-          <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg z-10">
-            <div className="container mx-auto px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <StoreIcon size={32} />
-                  <div>
-                    <h1 className="text-2xl font-bold">3D Store Floor Plan Analyzer</h1>
-                    <p className="text-sm text-blue-100">AI-powered warehouse visualization</p>
-                  </div>
-                </div>
-                
-                {/* Upload Button */}
-                <div className="flex items-center gap-4">
-                  {uploadComplete && (
-                    <div className="text-sm bg-green-500 px-4 py-2 rounded-lg font-semibold flex items-center gap-2">
-                      <StoreIcon size={18} />
-                      {shelves.length} Shelf{shelves.length !== 1 ? 's' : ''} Detected
-                    </div>
+        <div className="flex-1 flex flex-col bg-white">
+          {/* Hero Section */}
+          <div className="flex-1 flex flex-col items-center justify-center px-8 py-16">
+            <div className="text-center max-w-2xl mx-auto">
+              <h1 className="text-[48px] md:text-[56px] font-medium text-[#1a1a1a] tracking-[-0.03em] leading-[1.1] mb-4">
+                Visualize Your Store.
+              </h1>
+              <p className="text-[18px] text-gray-500 leading-relaxed mb-8">
+                Upload a floor plan and instantly see your shelves rendered in 3D.
+                <br />AI-powered analysis for smarter inventory management.
+              </p>
+
+              {/* Upload Button */}
+              <div className="flex flex-col items-center gap-4">
+                <label
+                  htmlFor="floor-plan-upload"
+                  className={`
+                    inline-flex items-center gap-2.5 px-8 py-4 rounded-full font-medium text-[15px]
+                    cursor-pointer transition-all
+                    ${loading
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-[#1a1a1a] text-white hover:bg-black'
+                    }
+                  `}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Analyzing floor plan...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={20} />
+                      Upload Floor Plan
+                    </>
                   )}
-                  
-                  <label
-                    htmlFor="floor-plan-upload"
-                    className={`
-                      flex items-center gap-2 px-6 py-3 rounded-lg font-semibold 
-                      cursor-pointer transition-all shadow-lg
-                      ${loading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-white text-blue-600 hover:bg-blue-50 hover:shadow-xl'
-                      }
-                    `}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 size={20} className="animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={20} />
-                        Upload Floor Plan
-                      </>
-                    )}
-                  </label>
-                  <input
-                    id="floor-plan-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={loading}
-                    className="hidden"
-                  />
-                </div>
+                </label>
+                <input
+                  id="floor-plan-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={loading}
+                  className="hidden"
+                />
+
+                {/* File name display */}
+                {fileName && (
+                  <p className="text-[14px] text-gray-400">
+                    Selected: {fileName}
+                  </p>
+                )}
+
+                {/* Shelves detected badge */}
+                {uploadComplete && (
+                  <div className="text-[14px] bg-[#f3f3f3] text-[#1a1a1a] px-5 py-2.5 rounded-full font-medium flex items-center gap-2">
+                    <StoreIcon size={16} />
+                    {shelves.length} Shelf{shelves.length !== 1 ? 's' : ''} Detected
+                  </div>
+                )}
               </div>
-              
-              {/* File name display */}
-              {fileName && (
-                <div className="mt-2 text-sm text-blue-100">
-                  📄 {fileName}
-                </div>
-              )}
             </div>
-          </header>
+          </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-500 text-white px-6 py-3 shadow-lg z-10">
-              <div className="container mx-auto flex items-center gap-3">
-                <AlertCircle size={20} />
-                <span className="font-semibold">Error:</span>
-                <span>{error}</span>
+            <div className="bg-red-50 text-red-600 px-6 py-4 border-t border-red-100">
+              <div className="max-w-2xl mx-auto flex items-center gap-3">
+                <AlertCircle size={18} />
+                <span className="text-[14px]">{error}</span>
               </div>
             </div>
           )}
-
-          {/* Info Banner */}
-          {!uploadComplete && !loading && (
-            <div className="bg-indigo-600 text-white px-6 py-3 shadow-lg z-10">
-              <div className="container mx-auto flex items-center gap-3">
-                <Info size={20} />
-                <span>Upload a floor plan image to visualize shelves in 3D</span>
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       )}
 
       {/* 3D Scene */}
       <div className="flex-1 relative">
         {shelves.length > 0 ? (
           <>
-            <StoreScene 
-              shelves={shelves} 
+            <StoreScene
+              shelves={shelves}
               onShelfSelect={handleShelfSelect}
               selectedShelfId={selectedShelfId}
               isFreeCam={isFreeCam}
               ref={cameraControlsRef}
             />
-            
+
             {/* Shelf Management UI - appears when shelf selected */}
             <ShelfManagementUI
               shelf={selectedShelf}
@@ -292,26 +281,28 @@ function Store() {
             )}
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+          <div className="w-full h-full flex items-center justify-center bg-[#f3f3f3]">
             <div className="text-center text-gray-400">
-              <StoreIcon size={64} className="mx-auto mb-4 opacity-50" />
-              <p className="text-xl font-semibold mb-2">No Floor Plan Loaded</p>
-              <p className="text-sm">Upload a floor plan image to get started</p>
+              <div className="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <StoreIcon size={32} className="text-gray-400" />
+              </div>
+              <p className="text-[18px] font-medium text-[#1a1a1a] mb-1">No Floor Plan Loaded</p>
+              <p className="text-[14px] text-gray-500">Upload a floor plan image to get started</p>
             </div>
           </div>
         )}
-        
+
         {/* Legend & Controls */}
         {shelves.length > 0 && !selectedShelfId && (
           <div className="absolute bottom-6 left-6 space-y-3">
             {/* Analytics Dashboard Button */}
             <button
               onClick={() => setShowAnalytics(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-xl
-                font-semibold transition-all transform hover:scale-105
-                bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full
+                font-medium text-[14px] transition-all
+                bg-[#1a1a1a] hover:bg-black text-white shadow-lg"
             >
-              <BarChart3 size={20} />
+              <BarChart3 size={18} />
               <span>View Analytics</span>
             </button>
 
@@ -319,82 +310,84 @@ function Store() {
             <button
               onClick={toggleFreeCam}
               className={`
-                w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-xl
-                font-semibold transition-all transform hover:scale-105
-                ${isFreeCam 
-                  ? 'bg-green-500 hover:bg-green-600 text-white' 
-                  : 'bg-white/90 hover:bg-white text-gray-800'
+                w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full
+                font-medium text-[14px] transition-all shadow-lg
+                ${isFreeCam
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-white hover:bg-[#f3f3f3] text-[#1a1a1a] border border-gray-200'
                 }
               `}
             >
               {isFreeCam ? (
                 <>
-                  <Camera size={20} />
+                  <Camera size={18} />
                   <span>FreeCam Mode</span>
                 </>
               ) : (
                 <>
-                  <Lock size={20} />
+                  <Lock size={18} />
                   <span>Locked View</span>
                 </>
               )}
             </button>
 
             {/* Legend */}
-            <div className="bg-white/90 backdrop-blur rounded-lg shadow-xl p-4 text-sm">
-              <h3 className="font-bold text-gray-800 mb-2">Legend</h3>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span className="text-gray-700">Stocked Shelf</span>
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-gray-100 p-5 min-w-[180px]">
+              <h3 className="text-[14px] font-medium text-[#1a1a1a] mb-4 tracking-[-0.01em]">Legend</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-[#1a1a1a] rounded-full"></div>
+                  <span className="text-[13px] text-gray-600">Stocked Shelf</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                  <span className="text-gray-700">Empty Shelf</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                  <span className="text-[13px] text-gray-600">Empty Shelf</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-white border-2 border-gray-400 rounded"></div>
-                  <span className="text-gray-700">Hovered</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-white border-2 border-[#1a1a1a] rounded-full"></div>
+                  <span className="text-[13px] text-gray-600">Hovered</span>
                 </div>
               </div>
               {isFreeCam && (
-                <div className="mt-3 pt-3 border-t border-gray-300 text-xs text-gray-600">
-                  <p>🖱️ Drag to rotate</p>
-                  <p>🔍 Scroll to zoom</p>
-                  <p>⌨️ Right-click to pan</p>
+                <div className="mt-4 pt-4 border-t border-gray-100 text-[12px] text-gray-500 space-y-1.5">
+                  <p>Drag to rotate</p>
+                  <p>Scroll to zoom</p>
+                  <p>Right-click to pan</p>
                 </div>
               )}
             </div>
           </div>
         )}
-        
+
         {/* Stats Panel */}
         {shelves.length > 0 && !selectedShelfId && (
-          <div className="absolute top-6 right-6 bg-white/90 backdrop-blur rounded-lg shadow-xl p-4 min-w-[200px]">
-            <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <StoreIcon size={18} />
-              Store Stats
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Shelves:</span>
-                <span className="font-semibold text-gray-800">{shelves.length}</span>
+          <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm rounded-2xl border border-gray-100 p-5 min-w-[220px]">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-[#f3f3f3] rounded-xl flex items-center justify-center">
+                <StoreIcon size={16} className="text-[#1a1a1a]" />
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Empty:</span>
-                <span className="font-semibold text-yellow-600">
+              <h3 className="text-[15px] font-medium text-[#1a1a1a] tracking-[-0.01em]">Store Stats</h3>
+            </div>
+            <div className="space-y-3 text-[13px]">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Total Shelves</span>
+                <span className="font-medium text-[#1a1a1a]">{shelves.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Empty</span>
+                <span className="font-medium text-gray-500">
                   {shelves.filter(s => s.metadata.count === 0).length}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Stocked:</span>
-                <span className="font-semibold text-green-600">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Stocked</span>
+                <span className="font-medium text-[#1a1a1a]">
                   {shelves.filter(s => s.metadata.count > 0).length}
                 </span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-gray-300">
-                <span className="text-gray-600">Total Items:</span>
-                <span className="font-semibold text-blue-600">
+              <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                <span className="text-gray-500">Total Items</span>
+                <span className="font-medium text-[#1a1a1a]">
                   {shelves.reduce((sum, s) => sum + (s.metadata.count || 0), 0)}
                 </span>
               </div>

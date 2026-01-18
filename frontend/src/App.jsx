@@ -1,5 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
 import { LandingPage } from './pages/LandingPage';
 import { Dashboard } from './pages/Dashboard';
@@ -9,34 +8,21 @@ import { ClassManager } from './pages/ClassManager';
 import { EventTimeline } from './pages/EventTimeline';
 import Store from './pages/Store';
 
-function AnimatedRoutes() {
-  const location = useLocation();
-
-  return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/objects" element={<ObjectBrowser />} />
-        <Route path="/spatial" element={<SpatialView />} />
-        <Route path="/events" element={<EventTimeline />} />
-      </Routes>
-    </AnimatePresence>
-  );
-}
-
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/objects" element={<ObjectBrowser />} />
-          <Route path="/classes" element={<ClassManager />} />
-          <Route path="/spatial" element={<SpatialView />} />
-          <Route path="/events" element={<EventTimeline />} />
-          <Route path="/store" element={<Store />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Public Landing Page - No Layout */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* App Routes - Wrapped in Layout */}
+        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/objects" element={<Layout><ObjectBrowser /></Layout>} />
+        <Route path="/classes" element={<Layout><ClassManager /></Layout>} />
+        <Route path="/spatial" element={<Layout><SpatialView /></Layout>} />
+        <Route path="/events" element={<Layout><EventTimeline /></Layout>} />
+        <Route path="/store" element={<Layout><Store /></Layout>} />
+      </Routes>
     </Router>
   );
 }

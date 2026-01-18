@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Minus, ArrowLeft, Package, BarChart3 } from 'lucide-react';
+import { Plus, Minus, ArrowLeft, Package, BarChart3, X } from 'lucide-react';
 import ProductTypeSelector from './ProductTypeSelector';
 import ShelfAnalytics from './ShelfAnalytics';
 
@@ -33,56 +33,54 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
     <>
       {/* Main Control Panel */}
       <div className="fixed top-6 left-6 z-50">
-        <div className="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-4 w-[350px] border-2 border-blue-500">
+        <div className="bg-white rounded-2xl shadow-xl p-5 w-[350px] border border-gray-100">
           {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Package size={20} className="text-white" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#1a1a1a] rounded-xl flex items-center justify-center">
+                <Package size={18} className="text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-800">{shelf.label}</h2>
-                <p className="text-xs text-gray-600">ID: {shelf.id}</p>
+                <h2 className="text-[18px] font-medium text-[#1a1a1a]">{shelf.label}</h2>
+                <p className="text-[12px] text-gray-400">ID: {shelf.id}</p>
               </div>
             </div>
-            
+
             {/* Analytics Toggle */}
             <button
               onClick={() => setShowAnalytics(!showAnalytics)}
-              className={`p-2 rounded-lg transition-colors ${
-                showAnalytics 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`p-2 rounded-full transition-colors ${showAnalytics
+                  ? 'bg-[#1a1a1a] text-white'
+                  : 'bg-[#f3f3f3] text-gray-600 hover:bg-gray-200'
+                }`}
               title="Toggle Analytics"
             >
-              <BarChart3 size={20} />
+              <BarChart3 size={18} />
             </button>
           </div>
 
           {/* Product Info */}
-          <div className="bg-gray-50 rounded-lg p-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-[#f3f3f3] rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-xs text-gray-600">Product</p>
-                <p className="text-base font-semibold text-gray-800 capitalize">
+                <p className="text-[11px] text-gray-500 uppercase tracking-wide">Product</p>
+                <p className="text-[15px] font-medium text-[#1a1a1a] capitalize">
                   {shelf.metadata.item || 'Unknown'}
                 </p>
               </div>
-              
+
               <div className="text-right">
-                <p className="text-xs text-gray-600">Stock</p>
-                <p className={`text-2xl font-bold ${
-                  shelf.metadata.count === 0 ? 'text-yellow-500' : 'text-green-600'
-                }`}>
+                <p className="text-[11px] text-gray-500 uppercase tracking-wide">Stock</p>
+                <p className={`text-[24px] font-medium ${shelf.metadata.count === 0 ? 'text-yellow-500' : 'text-green-600'
+                  }`}>
                   {shelf.metadata.count}
                 </p>
               </div>
             </div>
-            
+
             {/* Product Type Selector */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-              <span className="text-xs text-gray-600">Type:</span>
+            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+              <span className="text-[12px] text-gray-500">Type:</span>
               <ProductTypeSelector
                 currentType={shelf.metadata.productType || 'cell_phone'}
                 onTypeChange={handleTypeChange}
@@ -91,19 +89,19 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
           </div>
 
           {/* Stock Controls */}
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <button
               onClick={handleDecrement}
               disabled={shelf.metadata.count === 0}
-              className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-3 rounded-lg transition-all transform active:scale-95 flex items-center justify-center gap-1.5 shadow-md text-sm"
+              className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2.5 px-3 rounded-full transition-colors flex items-center justify-center gap-1.5 text-[13px]"
             >
               <Minus size={16} />
               <span>Remove</span>
             </button>
-            
+
             <button
               onClick={handleIncrement}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 px-3 rounded-lg transition-all transform active:scale-95 flex items-center justify-center gap-1.5 shadow-md text-sm"
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 px-3 rounded-full transition-colors flex items-center justify-center gap-1.5 text-[13px]"
             >
               <Plus size={16} />
               <span>Add</span>
@@ -113,7 +111,7 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
           {/* Back Button */}
           <button
             onClick={onClose}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5 text-sm"
+            className="w-full bg-[#f3f3f3] hover:bg-gray-200 text-[#1a1a1a] font-medium py-2.5 px-3 rounded-full transition-colors flex items-center justify-center gap-1.5 text-[13px]"
           >
             <ArrowLeft size={16} />
             Back to Overview
@@ -124,17 +122,17 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
       {/* Analytics Panel - Right Side */}
       {showAnalytics && (
         <div className="fixed top-6 right-6 z-50 w-[450px]">
-          <div className="bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl p-4 border-2 border-blue-500">
+          <div className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <BarChart3 size={20} className="text-blue-500" />
+              <h3 className="text-[16px] font-medium text-[#1a1a1a] flex items-center gap-2">
+                <BarChart3 size={18} className="text-gray-400" />
                 Analytics - {shelf.id}
               </h3>
               <button
                 onClick={() => setShowAnalytics(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
+                className="p-1.5 rounded-full bg-[#f3f3f3] hover:bg-gray-200 text-gray-500 transition-colors"
               >
-                ×
+                <X size={16} />
               </button>
             </div>
             <ShelfAnalytics shelfId={shelf.id} />

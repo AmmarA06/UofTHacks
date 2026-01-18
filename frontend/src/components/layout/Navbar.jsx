@@ -46,10 +46,8 @@ export function Navbar() {
                         })}
                     </div>
 
-                    {/* Right - Back to Home */}
-                    <Link to="/" className="text-[13px] text-gray-500 hover:text-[#1a1a1a] transition-colors">
-                        Back to Home
-                    </Link>
+                    {/* Right - Empty space for balance */}
+                    <div className="w-24"></div>
                 </div>
             </div>
         </nav>

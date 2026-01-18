@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -41,7 +41,7 @@ function AnalyticsDashboard({ onClose }) {
     };
 
     loadAnalytics();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       setRefreshKey(prev => prev + 1);
@@ -53,11 +53,11 @@ function AnalyticsDashboard({ onClose }) {
 
   if (loading && !analytics) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40">
-        <div className="bg-white rounded-lg p-8 shadow-2xl">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-40">
+        <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100">
           <div className="flex items-center gap-3">
-            <Activity className="animate-spin" size={24} />
-            <span className="text-lg font-semibold">Loading Analytics...</span>
+            <Activity className="animate-spin text-[#1a1a1a]" size={24} />
+            <span className="text-[16px] font-medium text-[#1a1a1a]">Loading Analytics...</span>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@ function AnalyticsDashboard({ onClose }) {
   if (error) {
     return (
       <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-xl">
+        <div className="bg-red-50 text-red-600 px-6 py-3 rounded-full shadow-xl border border-red-100 text-[14px]">
           {error}
         </div>
       </div>
@@ -79,29 +79,31 @@ function AnalyticsDashboard({ onClose }) {
   const { overallStats, shelfData, hourlyTrend, categoryData } = analytics;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 overflow-y-auto"
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 overflow-y-auto pt-20"
       onClick={onClose}
     >
-      <div 
-        className="container mx-auto px-6 py-6"
+      <div
+        className="container mx-auto px-6 py-8 pb-12"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl p-6 mb-6 shadow-2xl">
+        <div className="bg-white rounded-2xl p-6 mb-6 shadow-xl border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Store Analytics Overview</h1>
-              <p className="text-blue-100">Real-time insights across all shelves (A1-A6, B1-B6)</p>
+              <h1 className="text-[28px] font-medium text-[#1a1a1a] tracking-[-0.02em] mb-1">Store Analytics Overview</h1>
+              <p className="text-[14px] text-gray-500">Real-time insights across all shelves (A1-A6, B1-B6)</p>
             </div>
             <div className="flex items-center gap-4">
-              <Activity size={48} className="opacity-80" />
+              <div className="w-12 h-12 bg-[#f3f3f3] rounded-xl flex items-center justify-center">
+                <Activity size={24} className="text-[#1a1a1a]" />
+              </div>
               <button
                 onClick={onClose}
-                className="bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
+                className="p-2 rounded-full bg-[#f3f3f3] hover:bg-gray-200 text-gray-600 transition-colors"
                 title="Close Analytics"
               >
-                <X size={32} />
+                <X size={24} />
               </button>
             </div>
           </div>
@@ -110,48 +112,42 @@ function AnalyticsDashboard({ onClose }) {
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <MetricCard
-            icon={<Package size={24} />}
+            icon={<Package size={18} />}
             label="Total Pickups"
             value={overallStats.totalPickups.toLocaleString()}
-            color="bg-blue-500"
           />
           <MetricCard
-            icon={<ShoppingCart size={24} />}
+            icon={<ShoppingCart size={18} />}
             label="Purchases"
             value={overallStats.totalPurchases.toLocaleString()}
-            color="bg-green-500"
           />
           <MetricCard
-            icon={<TrendingUp size={24} />}
+            icon={<TrendingUp size={18} />}
             label="Conversion"
             value={`${overallStats.conversionRate}%`}
-            color="bg-purple-500"
           />
           <MetricCard
-            icon={<DollarSign size={24} />}
+            icon={<DollarSign size={18} />}
             label="Revenue"
             value={`$${parseFloat(overallStats.totalRevenue).toLocaleString()}`}
-            color="bg-yellow-500"
           />
           <MetricCard
-            icon={<Package size={24} />}
+            icon={<Package size={18} />}
             label="Abandoned"
             value={overallStats.totalReturns.toLocaleString()}
-            color="bg-red-500"
           />
           <MetricCard
-            icon={<Users size={24} />}
+            icon={<Users size={18} />}
             label="Active Users"
             value={overallStats.activeUsers.toLocaleString()}
-            color="bg-indigo-500"
           />
         </div>
 
         {/* Event Flow Sankey Chart with Apache ECharts */}
         {sankeyData && (
           <div className="mb-6">
-            <ChartCard title="📊 Event Flow Analysis - Sankey Diagram">
-              <p className="text-sm text-gray-600 mb-4">
+            <ChartCard title="Event Flow Analysis">
+              <p className="text-[13px] text-gray-500 mb-4">
                 Flow visualization: Total Views → Products (Phone & Bottle) → Event Types (Window Shopped, Cart Abandoned, Purchased)
               </p>
               <div style={{ height: '600px' }}>
@@ -162,7 +158,8 @@ function AnalyticsDashboard({ onClose }) {
                       left: 'center',
                       textStyle: {
                         fontSize: 16,
-                        fontWeight: 'bold'
+                        fontWeight: '500',
+                        color: '#1a1a1a'
                       }
                     },
                     tooltip: {
@@ -186,23 +183,23 @@ function AnalyticsDashboard({ onClose }) {
                         data: (() => {
                           const nodes = [];
                           const products = ['Phone', 'Bottle'];
-                          
+
                           // Add Total Views node (depth 0)
                           nodes.push({
                             name: 'Total Views',
-                            itemStyle: { color: '#6366f1' },
+                            itemStyle: { color: '#1a1a1a' },
                             depth: 0
                           });
-                          
+
                           // Add product nodes (depth 1)
                           products.forEach(product => {
                             nodes.push({
                               name: product,
-                              itemStyle: { color: '#8b5cf6' },
+                              itemStyle: { color: '#6b7280' },
                               depth: 1
                             });
                           });
-                          
+
                           // Add event type nodes for each product (depth 2)
                           products.forEach(product => {
                             nodes.push({
@@ -221,7 +218,7 @@ function AnalyticsDashboard({ onClose }) {
                               depth: 2
                             });
                           });
-                          
+
                           return nodes;
                         })(),
                         links: sankeyData.links.map(link => ({
@@ -234,7 +231,7 @@ function AnalyticsDashboard({ onClose }) {
                               if (targetName.includes('Window Shopped')) return 'rgba(59, 130, 246, 0.3)';
                               if (targetName.includes('Cart Abandoned')) return 'rgba(239, 68, 68, 0.3)';
                               if (targetName.includes('Purchased')) return 'rgba(16, 185, 129, 0.3)';
-                              return 'rgba(139, 92, 246, 0.3)';
+                              return 'rgba(107, 114, 128, 0.3)';
                             })()
                           }
                         })),
@@ -244,7 +241,8 @@ function AnalyticsDashboard({ onClose }) {
                         label: {
                           show: true,
                           position: 'right',
-                          formatter: '{b}'
+                          formatter: '{b}',
+                          color: '#1a1a1a'
                         },
                         left: '10%',
                         right: '20%',
@@ -258,59 +256,59 @@ function AnalyticsDashboard({ onClose }) {
                   lazyUpdate={true}
                 />
               </div>
-              
+
               {/* Summary Stats */}
               <div className="mt-6 grid grid-cols-3 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
+                  <div className="text-[24px] font-medium text-blue-600">
                     {sankeyData.links
                       .filter(l => sankeyData.nodes[l.target].name.includes('Window Shopped'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
                     }
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Total Window Shopped</div>
+                  <div className="text-[13px] text-gray-600 mt-1">Total Window Shopped</div>
                 </div>
-                <div className="bg-red-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-red-600">
+                <div className="bg-red-50 rounded-xl p-4 text-center border border-red-100">
+                  <div className="text-[24px] font-medium text-red-600">
                     {sankeyData.links
                       .filter(l => sankeyData.nodes[l.target].name.includes('Cart Abandoned'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
                     }
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Total Cart Abandoned</div>
+                  <div className="text-[13px] text-gray-600 mt-1">Total Cart Abandoned</div>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
+                  <div className="text-[24px] font-medium text-green-600">
                     {sankeyData.links
                       .filter(l => sankeyData.nodes[l.target].name.includes('Purchased'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
                     }
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Total Purchased</div>
+                  <div className="text-[13px] text-gray-600 mt-1">Total Purchased</div>
                 </div>
               </div>
-              
+
               {/* Legend */}
-              <div className="mt-4 flex flex-wrap gap-4 justify-center text-sm">
+              <div className="mt-4 flex flex-wrap gap-4 justify-center text-[13px]">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6366f1' }}></div>
-                  <span className="text-gray-700">Total Views</span>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#1a1a1a' }}></div>
+                  <span className="text-gray-600">Total Views</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: '#8b5cf6' }}></div>
-                  <span className="text-gray-700">Products</span>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#6b7280' }}></div>
+                  <span className="text-gray-600">Products</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span className="text-gray-700">Window Shopped</span>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-gray-600">Window Shopped</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-gray-700">Cart Abandoned</span>
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-gray-600">Cart Abandoned</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-gray-700">Purchased</span>
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-600">Purchased</span>
                 </div>
               </div>
             </ChartCard>
@@ -322,76 +320,76 @@ function AnalyticsDashboard({ onClose }) {
           <div className="mb-6">
             <ChartCard title="Recent Trends">
               {/* Metrics Summary Row */}
-              <div className="flex flex-wrap gap-8 mb-6 pb-4 border-b border-gray-200">
+              <div className="flex flex-wrap gap-8 mb-6 pb-4 border-b border-gray-100">
                 {/* Window Shopped */}
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">PRODUCT_WINDOW_SHO...</span>
+                  <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_WINDOW_SHO...</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-gray-900">{dailyTrends.metrics.windowShopped.value}</span>
-                    <span className={`flex items-center text-sm ${dailyTrends.metrics.windowShopped.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.windowShopped.value}</span>
+                    <span className={`flex items-center text-[13px] ${dailyTrends.metrics.windowShopped.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {dailyTrends.metrics.windowShopped.change >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                       {Math.abs(dailyTrends.metrics.windowShopped.change)}%
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">yesterday</span>
-                  <span className="text-xs text-gray-400">from {dailyTrends.metrics.windowShopped.comparisonDate}</span>
+                  <span className="text-[12px] text-gray-400">yesterday</span>
+                  <span className="text-[12px] text-gray-400">from {dailyTrends.metrics.windowShopped.comparisonDate}</span>
                 </div>
-                
+
                 {/* Cart Abandoned */}
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">PRODUCT_CART_ABANDO...</span>
+                  <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_CART_ABANDO...</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-gray-900">{dailyTrends.metrics.cartAbandoned.value}</span>
-                    <span className={`flex items-center text-sm ${dailyTrends.metrics.cartAbandoned.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.cartAbandoned.value}</span>
+                    <span className={`flex items-center text-[13px] ${dailyTrends.metrics.cartAbandoned.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {dailyTrends.metrics.cartAbandoned.change >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                       {Math.abs(dailyTrends.metrics.cartAbandoned.change)}%
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">yesterday</span>
-                  <span className="text-xs text-gray-400">from {dailyTrends.metrics.cartAbandoned.comparisonDate}</span>
+                  <span className="text-[12px] text-gray-400">yesterday</span>
+                  <span className="text-[12px] text-gray-400">from {dailyTrends.metrics.cartAbandoned.comparisonDate}</span>
                 </div>
-                
+
                 {/* Purchased */}
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">PRODUCT_PURCHASED</span>
+                  <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_PURCHASED</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-gray-900">{dailyTrends.metrics.purchased.value}</span>
-                    <span className={`flex items-center text-sm ${dailyTrends.metrics.purchased.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.purchased.value}</span>
+                    <span className={`flex items-center text-[13px] ${dailyTrends.metrics.purchased.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {dailyTrends.metrics.purchased.change >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                       {Math.abs(dailyTrends.metrics.purchased.change)}%
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">yesterday</span>
-                  <span className="text-xs text-gray-400">from {dailyTrends.metrics.purchased.comparisonDate}</span>
+                  <span className="text-[12px] text-gray-400">yesterday</span>
+                  <span className="text-[12px] text-gray-400">from {dailyTrends.metrics.purchased.comparisonDate}</span>
                 </div>
               </div>
-              
+
               {/* Line Chart */}
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={dailyTrends.dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f3f3" />
+                  <XAxis
+                    dataKey="date"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: '#9ca3af' }}
                     interval={0}
                     tickFormatter={(value) => value || ''}
                   />
-                  <YAxis 
+                  <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                    label={{ value: 'Uniques', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280', fontSize: 12 } }}
+                    tick={{ fontSize: 12, fill: '#9ca3af' }}
+                    label={{ value: 'Uniques', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af', fontSize: 12 } }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
                       border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
                     labelFormatter={(value, payload) => {
@@ -402,29 +400,29 @@ function AnalyticsDashboard({ onClose }) {
                       return value;
                     }}
                   />
-                  <Line 
-                    type="linear" 
-                    dataKey="windowShopped" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2} 
+                  <Line
+                    type="linear"
+                    dataKey="windowShopped"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
                     dot={{ r: 3, fill: '#3b82f6' }}
-                    name="Window Shopped" 
+                    name="Window Shopped"
                   />
-                  <Line 
-                    type="linear" 
-                    dataKey="cartAbandoned" 
-                    stroke="#ca8a04" 
-                    strokeWidth={2} 
+                  <Line
+                    type="linear"
+                    dataKey="cartAbandoned"
+                    stroke="#ca8a04"
+                    strokeWidth={2}
                     dot={{ r: 3, fill: '#ca8a04' }}
-                    name="Cart Abandoned" 
+                    name="Cart Abandoned"
                   />
-                  <Line 
-                    type="linear" 
-                    dataKey="purchased" 
-                    stroke="#9333ea" 
-                    strokeWidth={2} 
+                  <Line
+                    type="linear"
+                    dataKey="purchased"
+                    stroke="#9333ea"
+                    strokeWidth={2}
                     dot={{ r: 3, fill: '#9333ea' }}
-                    name="Purchased" 
+                    name="Purchased"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -432,11 +430,11 @@ function AnalyticsDashboard({ onClose }) {
           </div>
         )}
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Category Distribution & Top Performers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Category Distribution */}
           <ChartCard title="Category Distribution">
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
                   data={categoryData}
@@ -444,7 +442,7 @@ function AnalyticsDashboard({ onClose }) {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={70}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -456,68 +454,24 @@ function AnalyticsDashboard({ onClose }) {
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
-        </div>
 
-        {/* Shelf Performance Table */}
-        <ChartCard title="Shelf Performance">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 border-b-2 border-gray-300">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold">Shelf ID</th>
-                  <th className="px-4 py-3 text-right font-semibold">Pickups</th>
-                  <th className="px-4 py-3 text-right font-semibold">Purchases</th>
-                  <th className="px-4 py-3 text-right font-semibold">Abandoned</th>
-                  <th className="px-4 py-3 text-right font-semibold">Conversion</th>
-                  <th className="px-4 py-3 text-right font-semibold">Revenue</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shelfData.map((shelf, index) => (
-                  <tr 
-                    key={shelf.shelfId}
-                    className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                  >
-                    <td className="px-4 py-3 font-semibold text-blue-600">{shelf.shelfId}</td>
-                    <td className="px-4 py-3 text-right">{shelf.pickups}</td>
-                    <td className="px-4 py-3 text-right text-green-600 font-medium">{shelf.purchases}</td>
-                    <td className="px-4 py-3 text-right text-red-600">{shelf.returns}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`px-2 py-1 rounded ${
-                        parseFloat(shelf.conversionRate) > 60 ? 'bg-green-100 text-green-700' :
-                        parseFloat(shelf.conversionRate) > 40 ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {shelf.conversionRate}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">${shelf.revenue}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ChartCard>
-
-        {/* Top Performers */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <ChartCard title="🏆 Top Revenue Shelf">
+          <ChartCard title="Top Revenue Shelf">
             <TopPerformer
               data={shelfData.sort((a, b) => parseFloat(b.revenue) - parseFloat(a.revenue))[0]}
               metric="revenue"
               prefix="$"
             />
           </ChartCard>
-          
-          <ChartCard title="🔥 Most Active Shelf">
+
+          <ChartCard title="Most Active Shelf">
             <TopPerformer
               data={shelfData.sort((a, b) => b.pickups - a.pickups)[0]}
               metric="pickups"
               prefix=""
             />
           </ChartCard>
-          
-          <ChartCard title="✨ Best Conversion">
+
+          <ChartCard title="Best Conversion">
             <TopPerformer
               data={shelfData.sort((a, b) => parseFloat(b.conversionRate) - parseFloat(a.conversionRate))[0]}
               metric="conversionRate"
@@ -526,27 +480,61 @@ function AnalyticsDashboard({ onClose }) {
           </ChartCard>
         </div>
 
-        {/* Last Updated */}
-        <div className="text-center text-sm text-gray-500">
-          Last updated: {new Date(analytics.timestamp).toLocaleString()}
-          <span className="ml-2 text-green-600">● Live</span>
-        </div>
+        {/* Shelf Performance Table */}
+        <ChartCard title="Shelf Performance">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[#f3f3f3] border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium text-[#1a1a1a]">Shelf ID</th>
+                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Pickups</th>
+                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Purchases</th>
+                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Abandoned</th>
+                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Conversion</th>
+                  <th className="px-4 py-3 text-right font-medium text-[#1a1a1a]">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shelfData.map((shelf, index) => (
+                  <tr
+                    key={shelf.shelfId}
+                    className={`border-b border-gray-100 hover:bg-[#f3f3f3] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafafa]'}`}
+                  >
+                    <td className="px-4 py-3 font-medium text-[#1a1a1a]">{shelf.shelfId}</td>
+                    <td className="px-4 py-3 text-right text-gray-600">{shelf.pickups}</td>
+                    <td className="px-4 py-3 text-right text-green-600 font-medium">{shelf.purchases}</td>
+                    <td className="px-4 py-3 text-right text-red-500">{shelf.returns}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`px-2 py-1 rounded-full text-[12px] ${parseFloat(shelf.conversionRate) > 60 ? 'bg-green-50 text-green-700' :
+                          parseFloat(shelf.conversionRate) > 40 ? 'bg-yellow-50 text-yellow-700' :
+                            'bg-red-50 text-red-700'
+                        }`}>
+                        {shelf.conversionRate}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-[#1a1a1a]">${shelf.revenue}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ChartCard>
       </div>
     </div>
   );
 }
 
 // Metric Card Component
-function MetricCard({ icon, label, value, color }) {
+function MetricCard({ icon, label, value }) {
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <div className={`${color} text-white p-2 rounded-lg`}>
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:border-gray-200 transition-colors">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 bg-[#f3f3f3] rounded-lg flex items-center justify-center text-[#1a1a1a]">
           {icon}
         </div>
+        <span className="text-[12px] text-gray-500">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-gray-800">{value}</div>
-      <div className="text-sm text-gray-600">{label}</div>
+      <div className="text-[24px] font-medium text-[#1a1a1a] tracking-[-0.02em]">{value}</div>
     </div>
   );
 }
@@ -554,8 +542,8 @@ function MetricCard({ icon, label, value, color }) {
 // Chart Card Component
 function ChartCard({ title, children }) {
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">{title}</h3>
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+      <h3 className="text-[16px] font-medium text-[#1a1a1a] mb-4">{title}</h3>
       {children}
     </div>
   );
@@ -565,13 +553,13 @@ function ChartCard({ title, children }) {
 function TopPerformer({ data, metric, prefix = '', suffix = '' }) {
   return (
     <div className="text-center py-4">
-      <div className="text-4xl font-bold text-blue-600 mb-2">
+      <div className="text-[32px] font-medium text-[#1a1a1a] mb-2">
         {data.shelfId}
       </div>
-      <div className="text-3xl font-bold text-gray-800">
+      <div className="text-[28px] font-medium text-[#1a1a1a]">
         {prefix}{data[metric]}{suffix}
       </div>
-      <div className="text-sm text-gray-600 mt-2">
+      <div className="text-[13px] text-gray-500 mt-2">
         {metric === 'revenue' && `${data.purchases} purchases`}
         {metric === 'pickups' && `${data.conversionRate}% conversion`}
         {metric === 'conversionRate' && `${data.purchases}/${data.pickups} purchases`}
