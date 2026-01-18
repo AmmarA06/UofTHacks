@@ -384,54 +384,6 @@ function AnalyticsDashboard({ onClose, shelves, onOptimizeShelves }) {
         {dailyTrends && (
           <div className="mb-6">
             <ChartCard title="Recent Trends">
-              {/* Metrics Summary Row */}
-              <div className="flex flex-wrap gap-8 mb-6 pb-4 border-b border-gray-100">
-                {/* Window Shopped */}
-                <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-                  <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_WINDOW_SHO...</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.windowShopped.value}</span>
-                    <span className={`flex items-center text-[13px] ${dailyTrends.metrics.windowShopped.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dailyTrends.metrics.windowShopped.change >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                      {Math.abs(dailyTrends.metrics.windowShopped.change)}%
-                    </span>
-                  </div>
-                  <span className="text-[12px] text-gray-400">yesterday</span>
-                  <span className="text-[12px] text-gray-400">from {dailyTrends.metrics.windowShopped.comparisonDate}</span>
-                </div>
-
-                {/* Cart Abandoned */}
-                <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                  <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_CART_ABANDO...</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.cartAbandoned.value}</span>
-                    <span className={`flex items-center text-[13px] ${dailyTrends.metrics.cartAbandoned.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dailyTrends.metrics.cartAbandoned.change >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                      {Math.abs(dailyTrends.metrics.cartAbandoned.change)}%
-                    </span>
-                  </div>
-                  <span className="text-[12px] text-gray-400">yesterday</span>
-                  <span className="text-[12px] text-gray-400">from {dailyTrends.metrics.cartAbandoned.comparisonDate}</span>
-                </div>
-
-                {/* Purchased */}
-                <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                  <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_PURCHASED</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.purchased.value}</span>
-                    <span className={`flex items-center text-[13px] ${dailyTrends.metrics.purchased.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dailyTrends.metrics.purchased.change >= 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                      {Math.abs(dailyTrends.metrics.purchased.change)}%
-                    </span>
-                  </div>
-                  <span className="text-[12px] text-gray-400">yesterday</span>
-                  <span className="text-[12px] text-gray-400">from {dailyTrends.metrics.purchased.comparisonDate}</span>
-                </div>
-              </div>
-
               {/* Line Chart */}
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={dailyTrends.dailyData}>
