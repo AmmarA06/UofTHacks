@@ -202,37 +202,37 @@ export function TableAssignmentModal({ isOpen, onClose, objectIds, onAssigned })
     <Modal isOpen={isOpen} onClose={onClose} title="Assign to Tables">
       <div className="space-y-6">
         {error && (
-          <div className="bg-error/10 border-2 border-error/20 text-error px-4 py-3 rounded-lg text-sm font-medium">
+          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
             {error}
           </div>
         )}
 
-        <p className="text-foreground-muted text-sm">
-          Assigning <span className="font-semibold text-foreground">{objectIds.length} object{objectIds.length !== 1 ? 's' : ''}</span> to specific tables.
+        <p className="text-gray-500 text-sm">
+          Assigning <span className="font-semibold text-gray-900">{objectIds.length} object{objectIds.length !== 1 ? 's' : ''}</span> to specific tables.
         </p>
 
         {/* Existing tables */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground border-l-2 border-accent pl-2">Available Tables</h3>
+            <h3 className="text-sm font-semibold text-gray-900 border-l-2 border-gray-700 pl-2">Available Tables</h3>
             {tables.length > 0 && (
-              <span className="text-xs text-foreground-subtle">{selectedTableIds.size} selected</span>
+              <span className="text-xs text-gray-900-subtle">{selectedTableIds.size} selected</span>
             )}
           </div>
 
           <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
             {tables.length === 0 ? (
-              <div className="text-center py-8 bg-background-subtle rounded-lg border-2 border-dashed border-border">
-                <Table2 className="mx-auto text-foreground-subtle mb-2" size={24} />
-                <p className="text-sm text-foreground-muted">No tables created yet.</p>
+              <div className="text-center py-8 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
+                <Table2 className="mx-auto text-gray-900-subtle mb-2" size={24} />
+                <p className="text-sm text-gray-500">No tables created yet.</p>
               </div>
             ) : (
               tables.map((table) => (
                 <div
                   key={table.group_id}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all duration-200 group ${selectedTableIds.has(table.group_id)
-                      ? 'bg-accent/5 border-accent/30 shadow-sm'
-                      : 'bg-background-card border-border hover:border-border-strong hover:shadow-sm'
+                      ? 'bg-gray-50 border-gray-300 shadow-sm'
+                      : 'bg-white border-gray-200 hover:border-gray-400 hover:shadow-sm'
                     }`}
                 >
                   {editingTableId === table.group_id ? (
@@ -253,13 +253,13 @@ export function TableAssignmentModal({ isOpen, onClose, objectIds, onAssigned })
                         onClick={() => toggleTableSelection(table.group_id)}
                         className="flex items-center gap-3 flex-1 cursor-pointer select-none"
                       >
-                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selectedTableIds.has(table.group_id) ? 'bg-accent border-accent' : 'border-border bg-background-elevated'
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selectedTableIds.has(table.group_id) ? 'bg-gray-800 border-gray-800' : 'border-gray-300 bg-gray-50'
                           }`}>
                           {selectedTableIds.has(table.group_id) && <Check size={12} className="text-white" strokeWidth={3} />}
                         </div>
                         <div className="flex items-center gap-2.5">
-                          <Table2 size={16} className={selectedTableIds.has(table.group_id) ? "text-accent" : "text-foreground-muted"} />
-                          <span className={`text-sm font-medium ${selectedTableIds.has(table.group_id) ? "text-accent" : "text-foreground"}`}>
+                          <Table2 size={16} className={selectedTableIds.has(table.group_id) ? "text-gray-800" : "text-gray-500"} />
+                          <span className={`text-sm font-medium ${selectedTableIds.has(table.group_id) ? "text-gray-800" : "text-gray-900"}`}>
                             {table.group_name}
                           </span>
                         </div>
@@ -272,7 +272,7 @@ export function TableAssignmentModal({ isOpen, onClose, objectIds, onAssigned })
                             setEditingTableId(table.group_id);
                             setEditingTableName(table.group_name);
                           }}
-                          className="p-1.5 text-foreground-muted hover:text-foreground hover:bg-background-hover rounded-md transition-colors"
+                          className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                           title="Rename table"
                         >
                           <Edit2 size={14} />
@@ -282,7 +282,7 @@ export function TableAssignmentModal({ isOpen, onClose, objectIds, onAssigned })
                             e.stopPropagation();
                             handleDeleteTable(table);
                           }}
-                          className="p-1.5 text-foreground-muted hover:text-error hover:bg-error/10 rounded-md transition-colors"
+                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           title="Delete table"
                         >
                           <Trash2 size={14} />

@@ -121,13 +121,13 @@ export function ObjectBrowser() {
           {/* Main filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle group-focus-within:text-accent transition-colors" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-gray-700 transition-colors" size={18} />
               <Input
                 type="text"
                 placeholder="Search by ID, class name, or table name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 w-full bg-background-elevated border-border focus:border-accent focus:ring-accent transition-all"
+                className="pl-10 w-full"
               />
             </div>
 
