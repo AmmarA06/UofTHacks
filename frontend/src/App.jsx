@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/layout/Layout';
+import { LandingPage } from './pages/LandingPage';
 import { Dashboard } from './pages/Dashboard';
 import { ObjectBrowser } from './pages/ObjectBrowser';
 import { SpatialView } from './pages/SpatialView';
@@ -28,7 +29,7 @@ function App() {
     <Router>
       <Layout>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/objects" element={<ObjectBrowser />} />
           <Route path="/classes" element={<ClassManager />} />
           <Route path="/spatial" element={<SpatialView />} />
