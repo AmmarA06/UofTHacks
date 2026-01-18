@@ -167,7 +167,7 @@ class GroundingDinoSystem:
         self.movement_threshold_percent = movement_threshold  # Configurable movement threshold (%)
         self.view_tracker = ViewObjectTracker(
             views=self.pan_positions,
-            disappear_timeout=7.0,      # 7s timeout for object disappearance (accounts for servo movement + detection lag)
+            disappear_timeout=2.0,      # 2s timeout for object disappearance
             update_interval=10.0,       # Update thumbnail/data every 10s
             quality_threshold=0.15,     # Update if confidence improves by +0.15
             movement_threshold_percent=self.movement_threshold_percent,  # CV movement threshold
@@ -205,13 +205,14 @@ class GroundingDinoSystem:
         # Get current servo view angle
         current_view = self.current_pan
 
-        # Inject person bbox into detections for proximity tracking (WINDOW_SHOPPED)
+        # Inject person bbox into detections for presence tracking (WINDOW_SHOPPED)
+        # WINDOW_SHOPPED fires when person is in frame >= 2 seconds then leaves
         # Find the person detection if any
         person_det = next((d for d in detections if d.get('class_name') == 'person'), None)
         person_bbox = person_det.get('bbox') if person_det else None
 
         # Add person_bbox to all non-person detections
-        # Filter out 'person' from detections - we only use it for proximity tracking, NOT database
+        # Filter out 'person' from detections - we only use it for presence tracking, NOT database
         non_person_detections = []
         for det in detections:
             if det.get('class_name') == 'person':

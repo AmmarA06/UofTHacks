@@ -10,17 +10,20 @@ Movement Logic:
 - Calculates displacement from home as a percentage of frame dimensions
 - Sets isMoved=True if displacement exceeds threshold
 
-Person Proximity Logic:
-- Tracks when a 'person' class is detected near an object
-- Sets person_triggered=True when person is within proximity threshold
-- Sets person_triggered=False when person leaves proximity
+Person Presence Logic:
+- Tracks when a 'person' is detected in frame while objects are present
+- Sets person_triggered=True when person enters frame
+- Sets person_triggered=False when person leaves frame
+- Requires minimum 2 seconds of person presence for WINDOW_SHOPPED event
 
 Behavioral State Triggers:
-- PRODUCT_PURCHASED: ENTRY -> EXIT (object left the scene = purchased)
-- WINDOW_SHOPPED: ENTRY -> person_triggered=True -> person_triggered=False
-                 (person interacted with object but didn't move it, fires immediately when person leaves)
+- PRODUCT_PURCHASED: Default - any EXIT fires PURCHASED unless WINDOW_SHOPPED already fired
+                     (object left the scene = purchased)
+- WINDOW_SHOPPED: Person in frame >= 2 seconds -> person leaves -> WINDOW_SHOPPED
+                  (person looked at object but didn't move it, fires when person leaves)
+                  Prevents PRODUCT_PURCHASED on EXIT (already counted)
 - CART_ABANDONED: ENTRY -> isMoved=True, then 4 seconds without EXIT -> CART_ABANDONED
-                 (object was picked up but held for too long without leaving)
+                  (object was picked up but held for too long without leaving)
 """
 
 import time
@@ -121,8 +124,8 @@ class MovementDetector:
         # Pending behavioral events (to be consumed by event system)
         self.pending_events: List[Dict] = []
 
-        # Person proximity tracking for WINDOW_SHOPPED
-        # {(view_angle, class_name): {'person_triggered': bool, 'last_person_time': float}}
+        # Person presence tracking for WINDOW_SHOPPED
+        # {(view_angle, class_name): {'person_triggered': bool, 'person_first_seen': float, 'trigger_count': int}}
         self.person_proximity: Dict[Tuple[int, str], Dict] = {}
 
         print(f"[MovementDetector] Initialized with {movement_threshold_percent}% threshold")
@@ -516,19 +519,20 @@ class MovementDetector:
                                 person_bbox: Optional[Tuple[int, int, int, int]],
                                 proximity_threshold_percent: float = 20.0) -> bool:
         """
-        Update person proximity state for an object.
+        Update person presence state for an object.
 
         WINDOW_SHOPPED is triggered when:
-        - person_triggered goes True (person near object)
-        - person_triggered goes False (person leaves)
-        - Object then exits
+        - Person is in frame while object is tracked
+        - Person leaves frame
+        - Person was in frame for >= 2 seconds
+        - Object wasn't moved
 
         Args:
             view_angle: Camera view angle
             object_class: The object class name (not 'person')
-            object_bbox: Object bounding box
+            object_bbox: Object bounding box (unused - kept for compatibility)
             person_bbox: Person bounding box (None if no person detected)
-            proximity_threshold_percent: Distance threshold as % of frame
+            proximity_threshold_percent: Unused - kept for compatibility
 
         Returns:
             True if person_triggered state changed
@@ -540,7 +544,7 @@ class MovementDetector:
         if key not in self.person_proximity:
             self.person_proximity[key] = {
                 'person_triggered': False,
-                'last_person_time': None,
+                'person_first_seen': None,
                 'trigger_count': 0
             }
 
@@ -548,53 +552,54 @@ class MovementDetector:
         was_triggered = prox_state['person_triggered']
 
         if person_bbox is not None:
-            # Check if person is close to object
-            is_near = self._is_person_near_object(
-                object_bbox, person_bbox, proximity_threshold_percent
-            )
-
-            if is_near and not was_triggered:
-                # Person just arrived near object
+            # Person is in frame
+            if not was_triggered:
+                # Person just entered frame
                 prox_state['person_triggered'] = True
-                prox_state['last_person_time'] = current_time
+                prox_state['person_first_seen'] = current_time
                 prox_state['trigger_count'] += 1
-                print(f"  [Person] Person NEAR {object_class} -> person_triggered=True")
+                print(f"  [Person] Person IN FRAME with {object_class} -> person_triggered=True")
                 return True
-
-            # Person near but already triggered - no change
-            elif is_near and was_triggered:
-                pass  # Still near, no state change
 
         else:
-            # No person detected
+            # No person in frame
             if was_triggered:
-                # Person was near, now gone -> WINDOW_SHOPPED
-                prox_state['person_triggered'] = False
-                print(f"  [Person] Person LEFT {object_class} -> WINDOW_SHOPPED")
+                # Person was in frame, now left
+                person_duration = current_time - prox_state['person_first_seen']
 
-                # Get object state to build event
-                obj_key = (view_angle, object_class)
-                state = self.object_states.get(obj_key)
+                if person_duration >= 2.0:
+                    # Person was in frame for >= 2 seconds -> WINDOW_SHOPPED
+                    prox_state['person_triggered'] = False
+                    print(f"  [Person] Person LEFT FRAME (duration: {person_duration:.1f}s) -> WINDOW_SHOPPED")
 
-                if state and not state.is_moved:
-                    # Only trigger WINDOW_SHOPPED if object wasn't moved
-                    current_time = time.time()
-                    event = {
-                        'type': 'WINDOW_SHOPPED',
-                        'object_id': state.object_id,
-                        'class_name': object_class,
-                        'view_angle': view_angle,
-                        'time_present_seconds': current_time - state.first_seen_time,
-                        'person_interaction_count': prox_state.get('trigger_count', 1),
-                        'timestamp': current_time
-                    }
-                    self.pending_events.append(event)
-                    state.behavioral_state = BehavioralState.WINDOW_SHOPPED
+                    # Get object state to build event
+                    obj_key = (view_angle, object_class)
+                    state = self.object_states.get(obj_key)
 
-                    # Clear atomic state to prevent reuse
-                    self._clear_atomic_state(obj_key)
+                    if state and not state.is_moved:
+                        # Only trigger WINDOW_SHOPPED if object wasn't moved
+                        event = {
+                            'type': 'WINDOW_SHOPPED',
+                            'object_id': state.object_id,
+                            'class_name': object_class,
+                            'view_angle': view_angle,
+                            'time_present_seconds': current_time - state.first_seen_time,
+                            'person_duration_seconds': person_duration,
+                            'person_interaction_count': prox_state.get('trigger_count', 1),
+                            'timestamp': current_time
+                        }
+                        self.pending_events.append(event)
+                        state.behavioral_state = BehavioralState.WINDOW_SHOPPED
 
-                return True
+                        # Clear atomic state to prevent reuse
+                        self._clear_atomic_state(obj_key, event_type='WINDOW_SHOPPED')
+
+                        return True
+                else:
+                    # Person left but was only there for < 2 seconds - no event
+                    prox_state['person_triggered'] = False
+                    print(f"  [Person] Person LEFT FRAME (duration: {person_duration:.1f}s) - too short, no event")
+                    return True
 
         return False
 
@@ -626,18 +631,17 @@ class MovementDetector:
         """
         Handle EXIT event - simplified logic.
 
-        New simplified logic:
-        - PURCHASED: ENTRY -> EXIT (any exit = purchased, object left the scene)
-        - WINDOW_SHOPPED: Fires immediately when person_triggered goes False (not on EXIT)
-
-        If WINDOW_SHOPPED already fired (behavioral_state == WINDOW_SHOPPED), don't emit PURCHASED.
+        Logic:
+        - If WINDOW_SHOPPED already fired: No event on EXIT (already counted)
+        - If object was moved OR no prior event: PRODUCT_PURCHASED (default - object left scene)
+        - WINDOW_SHOPPED fires separately when person leaves (not on EXIT)
 
         Args:
             view_angle: Camera view angle
             class_name: Object class name
 
         Returns:
-            Behavioral event dict, or None
+            Behavioral event dict, or None if WINDOW_SHOPPED already fired
         """
         key = (view_angle, class_name)
 
@@ -649,9 +653,12 @@ class MovementDetector:
 
         event = None
 
-        # Only fire PRODUCT_PURCHASED if object was actually moved
-        if state.is_moved or state.was_ever_moved:
-            # Object was moved and then exited -> PRODUCT_PURCHASED
+        # Check if WINDOW_SHOPPED already fired
+        if state.behavioral_state == BehavioralState.WINDOW_SHOPPED:
+            # WINDOW_SHOPPED already counted this interaction - don't fire PURCHASED
+            print(f"  [Movement] {class_name} EXIT (WINDOW_SHOPPED already fired, no additional event)")
+        else:
+            # Default case: object left the scene -> PRODUCT_PURCHASED
             state.behavioral_state = BehavioralState.PRODUCT_PURCHASED
             event = {
                 'type': 'PRODUCT_PURCHASED',
@@ -659,14 +666,14 @@ class MovementDetector:
                 'class_name': class_name,
                 'view_angle': view_angle,
                 'time_present_seconds': current_time - state.first_seen_time,
-                'was_moved': True,
+                'was_moved': state.is_moved or state.was_ever_moved,
                 'timestamp': current_time
             }
-            print(f"  [Movement] {class_name} EXIT while moved -> PRODUCT_PURCHASED")
-        else:
-            # Object exited without being moved - no additional event
-            # (WINDOW_SHOPPED may have already fired when person left)
-            print(f"  [Movement] {class_name} EXIT without movement (no event)")
+
+            if state.is_moved or state.was_ever_moved:
+                print(f"  [Movement] {class_name} EXIT while moved -> PRODUCT_PURCHASED")
+            else:
+                print(f"  [Movement] {class_name} EXIT (no person interaction) -> PRODUCT_PURCHASED")
 
         # Clean up person proximity tracking
         if key in self.person_proximity:

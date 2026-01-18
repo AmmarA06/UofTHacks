@@ -12,6 +12,7 @@ Features:
 - Periodic thumbnail replacement (10s interval OR +0.15 confidence boost)
 - Periodic position/confidence updates with EMA smoothing
 - CV-based movement detection using 2D bounding box coordinates
+- Person presence tracking (WINDOW_SHOPPED requires person in frame >= 2 seconds)
 - Behavioral state machine (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
 """
 
@@ -28,7 +29,7 @@ class ViewObjectTracker:
     and will be tracked separately at each location.
     """
 
-    def __init__(self, views=[0, 90, 180], disappear_timeout=5.0,
+    def __init__(self, views=[0, 90, 180], disappear_timeout=2.0,
                  update_interval=10.0, quality_threshold=0.15,
                  movement_threshold_percent=10.0, frame_width=1920, frame_height=1080):
         """
@@ -36,7 +37,7 @@ class ViewObjectTracker:
 
         Args:
             views: List of servo angles representing discrete views
-            disappear_timeout: Seconds before an object is considered "left" (default: 5.0s)
+            disappear_timeout: Seconds before an object is considered "left" (default: 2.0s)
             update_interval: Seconds between periodic data updates (default: 10.0s)
             quality_threshold: Confidence boost needed for quality-based update (default: 0.15)
             movement_threshold_percent: Percentage of frame dimensions for movement detection (default: 10.0%)
@@ -221,7 +222,8 @@ class ViewObjectTracker:
                             det['is_moved'] = movement_state.is_moved
                             det['behavioral_state'] = movement_state.behavioral_state.value
 
-                    # Track person proximity for WINDOW_SHOPPED
+                    # Track person presence for WINDOW_SHOPPED
+                    # Fires when person is in frame >= 2 seconds then leaves
                     # (person_bbox is injected into detections by the main loop)
                     if bbox is not None and class_name != 'person':
                         person_bbox = det.get('person_bbox')
@@ -443,7 +445,7 @@ if __name__ == "__main__":
     print("View Object Tracker - Test Mode")
     print("=" * 60)
 
-    tracker = ViewObjectTracker(views=[0, 90, 180], disappear_timeout=3.0)
+    tracker = ViewObjectTracker(views=[0, 90, 180], disappear_timeout=2.0)
 
     # Simulate detections at view 0°
     print("\n--- Frame 1: View 0° ---")
@@ -477,7 +479,7 @@ if __name__ == "__main__":
 
     # Wait and check disappearance
     print("\n--- Frame 4: View 0° (cup disappeared) ---")
-    time.sleep(3.5)  # Exceed timeout
+    time.sleep(2.5)  # Exceed timeout
     detections_partial = [
         {'class_name': 'laptop', 'confidence': 0.91, 'center_3d': (200, 100, 1500)}
     ]
