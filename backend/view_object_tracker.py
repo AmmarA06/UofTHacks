@@ -12,7 +12,7 @@ Features:
 - Periodic thumbnail replacement (10s interval OR +0.15 confidence boost)
 - Periodic position/confidence updates with EMA smoothing
 - CV-based movement detection using 2D bounding box coordinates
-- Person presence tracking (WINDOW_SHOPPED requires person in frame >= 2 seconds)
+- Person presence tracking (WINDOW_SHOPPED requires person in frame >= 4 seconds)
 - Behavioral state machine (WINDOW_SHOPPED, CART_ABANDONED, PRODUCT_PURCHASED)
 """
 
@@ -223,7 +223,7 @@ class ViewObjectTracker:
                             det['behavioral_state'] = movement_state.behavioral_state.value
 
                     # Track person presence for WINDOW_SHOPPED
-                    # Fires when person is in frame >= 2 seconds then leaves
+                    # Fires when person is in frame >= 4 seconds then leaves
                     # (person_bbox is injected into detections by the main loop)
                     if bbox is not None and class_name != 'person':
                         person_bbox = det.get('person_bbox')

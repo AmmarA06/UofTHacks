@@ -14,12 +14,12 @@ Person Presence Logic:
 - Tracks when a 'person' is detected in frame while objects are present
 - Sets person_triggered=True when person enters frame
 - Sets person_triggered=False when person leaves frame
-- Requires minimum 2 seconds of person presence for WINDOW_SHOPPED event
+- Requires minimum 4 seconds of person presence for WINDOW_SHOPPED event
 
 Behavioral State Triggers:
 - PRODUCT_PURCHASED: Default - any EXIT fires PURCHASED unless WINDOW_SHOPPED already fired
                      (object left the scene = purchased)
-- WINDOW_SHOPPED: Person in frame >= 2 seconds -> person leaves -> WINDOW_SHOPPED
+- WINDOW_SHOPPED: Person in frame >= 4 seconds -> person leaves -> WINDOW_SHOPPED
                   (person looked at object but didn't move it, fires when person leaves)
                   Prevents PRODUCT_PURCHASED on EXIT (already counted)
 - CART_ABANDONED: ENTRY -> isMoved=True, then 4 seconds without EXIT -> CART_ABANDONED
@@ -524,7 +524,7 @@ class MovementDetector:
         WINDOW_SHOPPED is triggered when:
         - Person is in frame while object is tracked
         - Person leaves frame
-        - Person was in frame for >= 2 seconds
+        - Person was in frame for >= 4 seconds
         - Object wasn't moved
 
         Args:
@@ -567,8 +567,8 @@ class MovementDetector:
                 # Person was in frame, now left
                 person_duration = current_time - prox_state['person_first_seen']
 
-                if person_duration >= 2.0:
-                    # Person was in frame for >= 2 seconds -> WINDOW_SHOPPED
+                if person_duration >= 4.0:
+                    # Person was in frame for >= 4 seconds -> WINDOW_SHOPPED
                     prox_state['person_triggered'] = False
                     print(f"  [Person] Person LEFT FRAME (duration: {person_duration:.1f}s) -> WINDOW_SHOPPED")
 
@@ -596,7 +596,7 @@ class MovementDetector:
 
                         return True
                 else:
-                    # Person left but was only there for < 2 seconds - no event
+                    # Person left but was only there for < 4 seconds - no event
                     prox_state['person_triggered'] = False
                     print(f"  [Person] Person LEFT FRAME (duration: {person_duration:.1f}s) - too short, no event")
                     return True

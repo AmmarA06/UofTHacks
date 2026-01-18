@@ -206,7 +206,7 @@ class GroundingDinoSystem:
         current_view = self.current_pan
 
         # Inject person bbox into detections for presence tracking (WINDOW_SHOPPED)
-        # WINDOW_SHOPPED fires when person is in frame >= 2 seconds then leaves
+        # WINDOW_SHOPPED fires when person is in frame >= 4 seconds then leaves
         # Find the person detection if any
         person_det = next((d for d in detections if d.get('class_name') == 'person'), None)
         person_bbox = person_det.get('bbox') if person_det else None
