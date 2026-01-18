@@ -1,0 +1,11 @@
+Model Information:
+* title:	Cash Counter / Checkout
+* source:	https://sketchfab.com/3d-models/cash-counter-checkout-1a0b9a90e22c4cbf876f4b822b51391b
+* author:	Umar (https://sketchfab.com/123umar123)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Cash Counter / Checkout" (https://sketchfab.com/3d-models/cash-counter-checkout-1a0b9a90e22c4cbf876f4b822b51391b) by Umar (https://sketchfab.com/123umar123) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
