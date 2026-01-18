@@ -277,7 +277,11 @@ function Store() {
 
             {/* Analytics Dashboard - appears when analytics button clicked */}
             {showAnalytics && !selectedShelfId && (
-              <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />
+              <AnalyticsDashboard
+                onClose={() => setShowAnalytics(false)}
+                shelves={shelves}
+                onOptimizeShelves={setShelves}
+              />
             )}
           </>
         ) : (

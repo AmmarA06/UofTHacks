@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer
 } from 'recharts';
-import { TrendingUp, Users, Clock, Activity, Package, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
-import { fetchShelfAnalytics, fetchRealtimeEvents, fetchShelfDailyTrends } from '../services/amplitudeService';
+import { TrendingUp, Activity, Package, ArrowUp, ArrowDown, ToggleLeft, ToggleRight } from 'lucide-react';
+import { fetchShelfAnalytics, fetchShelfDailyTrends, getMockShelfIds } from '../services/amplitudeService';
 
 /**
  * Shelf-specific Analytics - Micro view for individual shelf
@@ -13,40 +13,56 @@ import { fetchShelfAnalytics, fetchRealtimeEvents, fetchShelfDailyTrends } from 
  */
 function ShelfAnalytics({ shelfId }) {
   const [analytics, setAnalytics] = useState(null);
-  const [realtimeEvents, setRealtimeEvents] = useState([]);
   const [dailyTrends, setDailyTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [useMock, setUseMock] = useState(false);
+  const [selectedMockShelf, setSelectedMockShelf] = useState(shelfId || 'A1');
+
+  // Get mock shelf options
+  const mockShelves = getMockShelfIds();
+  const mockShelfIds = mockShelves.map(s => s.id);
+
+  // Sync selectedMockShelf when shelfId changes and it exists in mock data
+  // This ensures clicking a shelf updates the dropdown selection
+  useEffect(() => {
+    if (shelfId && mockShelfIds.includes(shelfId)) {
+      setSelectedMockShelf(shelfId);
+    }
+  }, [shelfId]);
+
+  // Determine which shelf ID to use:
+  // - In mock mode: use selectedMockShelf (which auto-syncs with shelfId when applicable)
+  // - In real mode: use the actual shelfId from the clicked shelf
+  const effectiveShelfId = useMock ? selectedMockShelf : shelfId;
 
   useEffect(() => {
     const loadShelfAnalytics = async () => {
       try {
         setLoading(true);
-        const [analyticsData, eventsData, trendsData] = await Promise.all([
-          fetchShelfAnalytics(shelfId),
-          fetchRealtimeEvents(shelfId),
-          fetchShelfDailyTrends(shelfId)
+        const [analyticsData, trendsData] = await Promise.all([
+          fetchShelfAnalytics(effectiveShelfId, useMock),
+          fetchShelfDailyTrends(effectiveShelfId, useMock)
         ]);
         setAnalytics(analyticsData);
-        setRealtimeEvents(eventsData);
         setDailyTrends(trendsData);
         setError(null);
       } catch (err) {
-        setError('Failed to load shelf analytics');
+        setError('Failed to load analytics');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (shelfId) {
+    if (effectiveShelfId) {
       loadShelfAnalytics();
 
       // Refresh every 15 seconds
       const interval = setInterval(loadShelfAnalytics, 15000);
       return () => clearInterval(interval);
     }
-  }, [shelfId]);
+  }, [effectiveShelfId, useMock]);
 
   if (loading && !analytics) {
     return (
@@ -61,26 +77,59 @@ function ShelfAnalytics({ shelfId }) {
 
   if (error || !analytics) return null;
 
-  const { stats, hourlyData, users, peakHour, products } = analytics;
+  const { stats, products } = analytics;
 
   return (
     <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+      {/* Data Source Toggle */}
+      <div className="bg-white rounded-2xl p-3 border border-gray-300 shadow-lg">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => setUseMock(!useMock)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+              useMock
+                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                : 'bg-green-100 text-green-700 border border-green-200'
+            }`}
+            title={useMock ? 'Switch to real data' : 'Switch to mock data'}
+          >
+            {useMock ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+            {useMock ? 'Mock' : 'Real'}
+          </button>
+          {useMock ? (
+            <select
+              value={selectedMockShelf}
+              onChange={(e) => setSelectedMockShelf(e.target.value)}
+              className="text-[11px] px-2 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            >
+              {mockShelves.map((shelf) => (
+                <option key={shelf.id} value={shelf.id}>
+                  {shelf.id} - {shelf.displayName}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-[11px] text-gray-500">Shelf {shelfId}</span>
+          )}
+        </div>
+      </div>
+
       {/* Key Stats */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard
           icon={<Package size={16} />}
           label="Pickups"
-          value={stats.totalPickups}
+          value={stats.totalPickups || 0}
         />
         <StatCard
           icon={<TrendingUp size={16} />}
           label="Conversion"
-          value={`${stats.conversionRate}%`}
+          value={`${stats.conversionRate || 0}%`}
         />
         <StatCard
-          icon={<DollarSign size={16} />}
-          label="Revenue"
-          value={`$${stats.totalRevenue}`}
+          icon={<Activity size={16} />}
+          label="Avg Dwell"
+          value={`${stats.averageDwellTime || 0}s`}
         />
       </div>
 
@@ -177,65 +226,40 @@ function ShelfAnalytics({ shelfId }) {
         </div>
       )}
 
-      {/* Product Performance */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
-        <h4 className="font-medium text-[#1a1a1a] mb-3 text-[14px]">Product Performance</h4>
-        <div className="space-y-2">
-          {products.map((product, index) => (
-            <div key={index} className="flex items-center justify-between text-[12px] border-b border-gray-100 pb-2 last:border-0">
-              <div>
-                <div className="font-medium text-[#1a1a1a]">{product.name}</div>
-                <div className="text-gray-500">{product.sku}</div>
+      {/* Class Performance */}
+      {products && products.length > 0 && (
+        <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
+          <h4 className="font-medium text-[#1a1a1a] mb-3 text-[14px]">Class Performance</h4>
+          <div className="space-y-2">
+            {products.map((product, index) => (
+              <div key={index} className="flex items-center justify-between text-[12px] border-b border-gray-100 pb-2 last:border-0">
+                <div>
+                  <div className="font-medium text-[#1a1a1a]">{product.name}</div>
+                  <div className="text-gray-500">{product.sku}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-green-600">{product.purchases || 0} purchases</div>
+                  <div className="text-gray-500">{product.conversionRate || 0}% conversion</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="font-medium text-green-600">{product.purchases} purchases</div>
-                <div className="text-gray-500">{product.conversionRate}% conversion</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* User Interactions */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-medium text-[#1a1a1a] text-[14px]">Recent Users</h4>
-          <span className="text-[12px] bg-[#f3f3f3] text-[#1a1a1a] px-2.5 py-1 rounded-full">
-            {stats.uniqueUsers} unique users
-          </span>
-        </div>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {users.slice(0, 10).map((user, index) => (
-            <UserCard key={index} user={user} />
-          ))}
-        </div>
-      </div>
-
-      {/* Real-time Event Stream */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 bg-[#f3f3f3] rounded-lg flex items-center justify-center">
-            <Activity size={14} className="text-[#1a1a1a]" />
+            ))}
           </div>
-          <h4 className="font-medium text-[#1a1a1a] text-[14px]">Recent Events</h4>
         </div>
-        <div className="space-y-1 max-h-40 overflow-y-auto">
-          {realtimeEvents.map((event, index) => (
-            <EventItem key={index} event={event} />
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Additional Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
-          <div className="text-[12px] text-gray-500 mb-1">Avg. Dwell Time</div>
-          <div className="text-[20px] font-medium text-[#1a1a1a]">{stats.averageDwellTime}s</div>
+          <div className="text-[12px] text-gray-500 mb-1">Window Shopped</div>
+          <div className="text-[20px] font-medium text-blue-600">{stats.totalWindowShopped || 0}</div>
         </div>
         <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
           <div className="text-[12px] text-gray-500 mb-1">Abandon Rate</div>
           <div className="text-[20px] font-medium text-red-500">
-            {((stats.totalReturns / stats.totalPickups) * 100).toFixed(1)}%
+            {(() => {
+              const total = (stats.totalWindowShopped || 0) + (stats.totalReturns || 0) + (stats.totalPurchases || 0);
+              return total > 0 ? ((stats.totalReturns / total) * 100).toFixed(1) : '0.0';
+            })()}%
           </div>
         </div>
       </div>
@@ -252,78 +276,6 @@ function StatCard({ icon, label, value }) {
       </div>
       <div className="text-[18px] font-medium text-[#1a1a1a]">{value}</div>
       <div className="text-[11px] text-gray-500">{label}</div>
-    </div>
-  );
-}
-
-// User Card Component
-function UserCard({ user }) {
-  const getActionIcon = (action) => {
-    switch (action) {
-      case 'WINDOW_SHOPPED': return '👀';
-      case 'PRODUCT_PURCHASED': return '✅';
-      case 'CART_ABANDONED': return '🛒';
-      default: return '📦';
-    }
-  };
-
-  return (
-    <div className="border border-gray-100 rounded-xl p-2 hover:bg-[#f3f3f3] transition-colors">
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <Users size={12} className="text-gray-400" />
-          <span className="text-[12px] font-mono font-medium text-[#1a1a1a]">{user.userId}</span>
-        </div>
-        <span className="text-[11px] text-gray-500">
-          {new Date(user.lastSeen).toLocaleTimeString()}
-        </span>
-      </div>
-      <div className="flex items-center gap-2 text-[11px]">
-        <span className="text-gray-500">{user.totalActions} actions</span>
-        <span className="text-gray-300">|</span>
-        <div className="flex gap-1">
-          {user.actions.slice(0, 3).map((action, i) => (
-            <span key={i} title={action.event}>
-              {getActionIcon(action.event)}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Event Item Component
-function EventItem({ event }) {
-  const getEventStyle = (eventType) => {
-    switch (eventType) {
-      case 'WINDOW_SHOPPED': return 'text-gray-700 bg-gray-50';
-      case 'PRODUCT_PURCHASED': return 'text-green-600 bg-green-50';
-      case 'CART_ABANDONED': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const getEventLabel = (eventType) => {
-    switch (eventType) {
-      case 'WINDOW_SHOPPED': return 'Viewed';
-      case 'PRODUCT_PURCHASED': return 'Purchased';
-      case 'CART_ABANDONED': return 'Abandoned';
-      default: return eventType;
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-between text-[11px] py-1.5 px-2 hover:bg-[#f3f3f3] rounded-lg transition-colors">
-      <div className="flex items-center gap-2 flex-1">
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getEventStyle(event.eventType)}`}>
-          {getEventLabel(event.eventType)}
-        </span>
-        <span className="text-gray-600">{event.properties.product}</span>
-      </div>
-      <span className="text-gray-400">
-        {event.minutesAgo === 0 ? 'Just now' : `${event.minutesAgo}m ago`}
-      </span>
     </div>
   );
 }
