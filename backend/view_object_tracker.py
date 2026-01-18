@@ -195,14 +195,19 @@ class ViewObjectTracker:
                     # Was absent, now present again - update existing DB entry
                     print(f"  [View {current_view}°] REAPPEAR: {class_name} (was absent, now present, depth={depth_source})")
                     state['is_present'] = True
+                    state['first_seen_time'] = current_time  # Reset first_seen_time for new session
                     state['last_update_time'] = current_time
                     state['best_confidence'] = det.get('confidence', 0.0)
 
                     # Re-register with movement detector (new "home" position)
-                    if bbox is not None and state['object_id'] is not None:
+                    # Use current bbox or fall back to last known bbox
+                    home_bbox = bbox or state.get('last_bbox')
+                    if home_bbox is not None and state['object_id'] is not None:
                         self.movement_detector.register_object(
-                            current_view, class_name, state['object_id'], bbox
+                            current_view, class_name, state['object_id'], home_bbox
                         )
+                    elif state['object_id'] is not None:
+                        print(f"  [View {current_view}°] WARNING: Cannot re-register {class_name} - no bbox available")
 
                     actions.append((det, 'update_present', state['object_id']))
                 else:
@@ -254,9 +259,9 @@ class ViewObjectTracker:
                     state['is_present'] = False
                     if state['in_db'] and state['object_id'] is not None:
                         # Trigger EXIT behavioral event in movement detector
-                        exit_event = self.movement_detector.handle_exit(current_view, class_name)
-                        if exit_event:
-                            self.pending_behavioral_events.append(exit_event)
+                        # Note: handle_exit() already adds the event to movement_detector.pending_events,
+                        # so we don't need to add it to pending_behavioral_events (that would cause duplicates)
+                        self.movement_detector.handle_exit(current_view, class_name)
 
                         self.pending_absent_marks.append((current_view, class_name, state['object_id']))
                         print(f"  [View {current_view}°] ABSENT: {class_name} (timeout: {time_since_seen:.1f}s, object_id: {state['object_id']})")
