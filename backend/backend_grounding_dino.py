@@ -442,7 +442,7 @@ class GroundingDinoSystem:
         fps_time = time.time()
 
         # Set up mouse callback for re-labeling
-        cv2.namedWindow('Grounding DINO: Detection + Database + API')
+        cv2.namedWindow('Grounding DINO: Detection + Database + API', cv2.WINDOW_NORMAL)
         cv2.setMouseCallback('Grounding DINO: Detection + Database + API', self.relabeling_system.mouse_callback)
 
         print("\nRunning... Point Kinect at objects\n")
@@ -543,6 +543,7 @@ class GroundingDinoSystem:
                                     cv2.circle(depth_vis, (depth_x, depth_y), 5, (0, 255, 0), -1)
 
                             depth_display = cv2.resize(depth_vis, (640, 530))
+                            cv2.namedWindow('Depth View', cv2.WINDOW_NORMAL)
                             cv2.imshow('Depth View', depth_display)
 
                         # Periodic table assignment (tracker handles marking objects absent)

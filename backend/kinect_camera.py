@@ -206,6 +206,10 @@ if __name__ == "__main__":
 
     kinect = KinectCamera()
 
+    # Create resizable windows
+    cv2.namedWindow('Kinect RGB', cv2.WINDOW_NORMAL)
+    cv2.namedWindow('Kinect Depth', cv2.WINDOW_NORMAL)
+
     try:
         while True:
             rgb, depth = kinect.get_frames()
