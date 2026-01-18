@@ -6,7 +6,7 @@ export function PageHeader({ title, description, children, className }) {
             <div>
                 <h1 className="text-[28px] font-medium tracking-[-0.02em] text-[#1a1a1a]">{title}</h1>
                 {description && (
-                    <p className="mt-1 text-[14px] text-gray-500">{description}</p>
+                    <p className="mt-1 text-[14px] text-gray-700">{description}</p>
                 )}
             </div>
             {children && (

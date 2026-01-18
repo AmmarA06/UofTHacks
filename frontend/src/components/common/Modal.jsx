@@ -27,17 +27,17 @@ export function Modal({ isOpen, onClose, title, children, footer, className }) {
 
             {/* Modal */}
             <div className={clsx(
-                "relative bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg max-h-[85vh] overflow-hidden",
+                "relative bg-white rounded-2xl shadow-2xl border border-gray-300 w-full max-w-lg max-h-[85vh] overflow-hidden",
                 "animate-in fade-in zoom-in-95 duration-200",
                 className
             )}>
                 {/* Header */}
                 {title && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                        <h2 className="text-[18px] font-medium text-[#1a1a1a]">{title}</h2>
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+                        <h2 className="text-[18px] font-semibold text-[#1a1a1a]">{title}</h2>
                         <button
                             onClick={onClose}
-                            className="p-2 text-gray-400 hover:text-[#1a1a1a] hover:bg-[#f3f3f3] rounded-full transition-colors"
+                            className="p-2 text-gray-600 hover:text-[#1a1a1a] hover:bg-gray-100 rounded-full transition-colors"
                         >
                             <X size={18} />
                         </button>
@@ -51,7 +51,7 @@ export function Modal({ isOpen, onClose, title, children, footer, className }) {
 
                 {/* Footer */}
                 {footer && (
-                    <div className="px-6 py-4 border-t border-gray-100 bg-[#fafafa]">
+                    <div className="px-6 py-4 border-t border-gray-200 bg-white">
                         {footer}
                     </div>
                 )}

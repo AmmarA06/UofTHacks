@@ -1,0 +1,23 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer detection ring -->
+  <circle cx="16" cy="16" r="14" stroke="#1a1a1a" stroke-width="1.5" opacity="0.3"/>
+  
+  <!-- Corner brackets (viewfinder style) -->
+  <path d="M 6 6 L 6 10 M 6 6 L 10 6" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 26 6 L 26 10 M 26 6 L 22 6" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 6 26 L 6 22 M 6 26 L 10 26" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 26 26 L 26 22 M 26 26 L 22 26" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Center tracking circle -->
+  <circle cx="16" cy="16" r="9" stroke="#1a1a1a" stroke-width="1.5"/>
+  
+  <!-- Center focal point -->
+  <circle cx="16" cy="16" r="4" fill="#1a1a1a"/>
+  <circle cx="16" cy="16" r="1.5" fill="white"/>
+  
+  <!-- Tracking dots (spatial points) -->
+  <circle cx="11" cy="11" r="1" fill="#1a1a1a" opacity="0.5"/>
+  <circle cx="21" cy="11" r="1" fill="#1a1a1a" opacity="0.5"/>
+  <circle cx="11" cy="21" r="1" fill="#1a1a1a" opacity="0.5"/>
+  <circle cx="21" cy="21" r="1" fill="#1a1a1a" opacity="0.5"/>
+</svg>

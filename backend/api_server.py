@@ -308,6 +308,26 @@ async def get_statistics():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/stats/timeline")
+async def get_detection_timeline(hours: int = 24):
+    """Get hourly detection timeline"""
+    try:
+        timeline = db.get_detection_timeline(hours)
+        return {"timeline": timeline}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stats/heatmap")
+async def get_detection_heatmap(days: int = 7):
+    """Get detection heatmap data (day × hour)"""
+    try:
+        heatmap = db.get_detection_heatmap(days)
+        return {"heatmap": heatmap}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/detections/recent")
 async def get_recent_detections(limit: int = 20):
     """Get recent detection events with object information"""

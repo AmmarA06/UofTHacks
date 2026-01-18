@@ -97,7 +97,7 @@ export function ObjectList({ objects, onDelete, onView, selectedObjects, onSelec
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -134,7 +134,7 @@ export function ObjectList({ objects, onDelete, onView, selectedObjects, onSelec
                 <tr
                   key={object.object_id}
                   className={`hover:bg-gray-50/80 transition-colors group cursor-pointer ${
-                    isSelected ? 'bg-blue-50/50' : ''
+                    isSelected ? 'bg-gray-100' : ''
                   }`}
                   onClick={() => onView(object)}
                 >
@@ -170,7 +170,7 @@ export function ObjectList({ objects, onDelete, onView, selectedObjects, onSelec
                   </td>
                   {/* Removed Confidence Column */}
                   <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-gray-100 text-[#1a1a1a] text-xs font-medium">
                       {object.detection_count}
                     </span>
                   </td>

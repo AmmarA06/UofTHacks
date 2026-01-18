@@ -61,7 +61,7 @@ function FloorPlanUploader() {
           <div className="flex items-center gap-4">
             <label
               htmlFor="floor-plan-input"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] text-white rounded-lg cursor-pointer hover:bg-black transition-colors"
             >
               <Upload size={20} />
               Choose Floor Plan

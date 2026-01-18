@@ -24,7 +24,7 @@ function ProductTypeSelector({ currentType, onTypeChange }) {
             className={`
               p-1 rounded transition-colors
               ${isActive 
-                ? 'bg-blue-500 text-white' 
+                ? 'bg-[#1a1a1a] text-white' 
                 : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
               }
             `}

@@ -132,7 +132,7 @@ export function ObjectBrowser() {
             </div>
 
             {/* View mode toggle */}
-            <div className="flex bg-[#f3f3f3] p-1 rounded-full gap-1">
+            <div className="flex bg-white border border-gray-200 p-1 rounded-full gap-1 shadow-md">
               {[
                 { mode: 'grid', icon: LayoutGrid, label: 'Grid' },
                 { mode: 'list', icon: List, label: 'List' },
@@ -158,7 +158,7 @@ export function ObjectBrowser() {
 
           {/* Selection actions */}
           {paginatedObjects.length > 0 && (
-            <div className="flex items-center gap-4 bg-[#f3f3f3] rounded-2xl p-3">
+            <div className="flex items-center gap-4 bg-white rounded-2xl p-3 border border-gray-200 shadow-md">
               <Button
                 variant="secondary"
                 onClick={handleSelectAll}

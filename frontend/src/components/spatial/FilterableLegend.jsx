@@ -31,7 +31,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
       return {
         label: 'All Objects',
         count: objects.length,
-        color: '#0070f3'
+        color: '#1a1a1a'
       };
     }
     return {
@@ -56,7 +56,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 {selectedClass === 'all' ? (
-                  <Layers className="w-5 h-5 text-accent" />
+                  <Layers className="w-5 h-5 text-[#1a1a1a]" />
                 ) : (
                   <div
                     className="w-5 h-5 rounded-full ring-2 ring-white shadow-sm flex-shrink-0"
@@ -94,19 +94,19 @@ export function FilterableLegend({ objects, onFilterChange }) {
               onClick={() => handleClassSelect('all')}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all ${
                 selectedClass === 'all'
-                  ? 'bg-accent/10 border border-accent/30'
+                  ? 'bg-gray-100 border border-gray-300'
                   : 'hover:bg-background-hover'
               }`}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Layers className="w-4 h-4 text-accent flex-shrink-0" />
+                <Layers className="w-4 h-4 text-[#1a1a1a] flex-shrink-0" />
                 <span className="text-sm font-medium text-foreground">All Objects</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-foreground-muted font-mono bg-background-subtle px-2 py-0.5 rounded-full">
                   {objects.length}
                 </span>
-                {selectedClass === 'all' && <Eye className="w-4 h-4 text-accent" />}
+                {selectedClass === 'all' && <Eye className="w-4 h-4 text-[#1a1a1a]" />}
               </div>
             </button>
 
@@ -126,7 +126,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
                     onClick={() => handleClassSelect(className)}
                     className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all ${
                       isSelected
-                        ? 'bg-accent/10 border border-accent/30'
+                        ? 'bg-gray-100 border border-gray-300'
                         : 'hover:bg-background-hover'
                     }`}
                   >
@@ -144,7 +144,7 @@ export function FilterableLegend({ objects, onFilterChange }) {
                         {count}
                       </span>
                       {isSelected ? (
-                        <Eye className="w-4 h-4 text-accent" />
+                        <Eye className="w-4 h-4 text-[#1a1a1a]" />
                       ) : (
                         <EyeOff className="w-4 h-4 text-foreground-subtle" />
                       )}

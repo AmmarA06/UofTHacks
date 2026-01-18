@@ -34,8 +34,8 @@ export const BentoCard = ({
         key={name}
         className={cn(
             "group relative col-span-3 flex flex-col justify-between overflow-hidden rounded-xl",
-            "bg-gradient-to-br from-white via-white to-blue-50/30", // White to subtle blue ombre
-            "border border-blue-100/50 shadow-sm hover:shadow-md transition-all duration-300", // Outline and shadow
+            "bg-gradient-to-br from-white via-white to-gray-50", // White to subtle gray ombre
+            "border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300", // Outline and shadow
             className
         )}
     >

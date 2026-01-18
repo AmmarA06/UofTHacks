@@ -23,18 +23,18 @@
 
 @layer components {
     .card {
-        @apply bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200;
+        @apply bg-white border border-gray-200 rounded-2xl p-4 shadow-lg hover:shadow-xl hover:border-gray-300 transition-all duration-200;
     }
 
     .btn-primary {
-        @apply bg-[#1a1a1a] hover:bg-black text-white px-4 py-2 rounded-full transition-all duration-200 font-medium;
+        @apply bg-[#1a1a1a] hover:bg-black text-white px-4 py-2 rounded-full transition-all duration-200 font-medium shadow-md hover:shadow-lg;
     }
 
     .btn-secondary {
-        @apply bg-[#f3f3f3] hover:bg-[#e8e8e8] border border-gray-200 hover:border-gray-300 text-[#1a1a1a] px-4 py-2 rounded-full transition-all duration-200 font-medium;
+        @apply bg-white hover:bg-gray-50 border border-gray-300 hover:border-gray-400 text-gray-700 px-4 py-2 rounded-full transition-all duration-200 font-medium shadow-sm hover:shadow-md;
     }
 
     .input {
-        @apply bg-white border border-gray-200 rounded-xl px-3 py-2 text-[#1a1a1a] focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all duration-200;
+        @apply bg-white border border-gray-300 rounded-xl px-3 py-2 text-[#1a1a1a] focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all duration-200 shadow-sm;
     }
 }

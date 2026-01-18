@@ -581,6 +581,56 @@ class VisualDatabase:
             'class_distribution': class_distribution
         }
 
+    def get_detection_timeline(self, hours: int = 24) -> List[Dict]:
+        """
+        Get hourly detection counts for the specified number of hours.
+        
+        Args:
+            hours: Number of hours to look back (default 24)
+            
+        Returns:
+            List of dicts with hour and detection counts
+        """
+        cursor = self.conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                strftime('%Y-%m-%d %H:00:00', timestamp) as hour,
+                COUNT(*) as detections,
+                COUNT(DISTINCT object_id) as unique_objects
+            FROM detections
+            WHERE timestamp > datetime('now', ? || ' hours')
+            GROUP BY hour
+            ORDER BY hour ASC
+        """, (f'-{hours}',))
+        
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_detection_heatmap(self, days: int = 7) -> List[Dict]:
+        """
+        Get detection heatmap data (day of week × hour of day).
+        
+        Args:
+            days: Number of days to look back (default 7)
+            
+        Returns:
+            List of dicts with day_of_week, hour, and count
+        """
+        cursor = self.conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                CAST(strftime('%w', timestamp) AS INTEGER) as day_of_week,
+                CAST(strftime('%H', timestamp) AS INTEGER) as hour,
+                COUNT(*) as count
+            FROM detections
+            WHERE timestamp > datetime('now', ? || ' days')
+            GROUP BY day_of_week, hour
+            ORDER BY day_of_week, hour
+        """, (f'-{days}',))
+        
+        return [dict(row) for row in cursor.fetchall()]
+
     def get_recent_detections(self, limit: int = 20) -> List[Dict]:
         """
         Get recent detection events with object information.

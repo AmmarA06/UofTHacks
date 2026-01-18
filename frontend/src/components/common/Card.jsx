@@ -16,20 +16,20 @@ export function Card({
 
     // Background and border with shadow
     glass
-      ? 'bg-gradient-to-br from-background-elevated/98 via-background-card/98 to-background-elevated/98 backdrop-blur-xl border border-accent-border shadow-sm'
-      : 'bg-gradient-to-br from-background-elevated to-background-card border border-border shadow-sm',
+      ? 'bg-white border border-gray-200 shadow-lg'
+      : 'bg-white border border-gray-200 shadow-lg',
 
     // Hover effects
     hover && [
       'cursor-pointer',
-      'hover:border-border-hover',
-      'hover:shadow-md',
+      'hover:border-gray-400',
+      'hover:shadow-xl',
       'hover:scale-[1.01]',
       'active:scale-[0.99]'
     ],
 
     // Glow effect
-    glow && 'shadow-md shadow-accent/10 border-accent-border',
+    glow && 'shadow-xl border-gray-400',
 
     // Custom className
     className

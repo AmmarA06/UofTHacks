@@ -33,7 +33,7 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
     <>
       {/* Main Control Panel */}
       <div className="fixed top-6 left-6 z-50">
-        <div className="bg-white rounded-2xl shadow-xl p-5 w-[350px] border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl p-5 w-[350px] border border-gray-300">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ function ShelfManagementUI({ shelf, onUpdateStock, onUpdateProductType, onClose 
       {/* Analytics Panel - Right Side */}
       {showAnalytics && (
         <div className="fixed top-6 right-6 z-50 w-[450px]">
-          <div className="bg-white rounded-2xl shadow-xl p-5 border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-xl p-5 border border-gray-300">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[16px] font-medium text-[#1a1a1a] flex items-center gap-2">
                 <BarChart3 size={18} className="text-gray-400" />

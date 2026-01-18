@@ -103,8 +103,36 @@ export function LandingPage() {
             )}>
                 <div className="max-w-7xl mx-auto flex items-center justify-between h-full relative">
                     {/* Left - Logo */}
-                    <a href="#top" className="flex items-center">
-                        <img src="/new_logo.png" alt="Identify" className="h-14 w-auto" />
+                    <a href="#top" className="flex items-center gap-3 group">
+                        <span className="text-[26px] font-bold text-[#1a1a1a] tracking-tight relative">
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                D
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                i
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                s
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                c
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                o
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                v
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                e
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                r
+                            </span>
+                            <span className="inline-block transition-all duration-300 group-hover:tracking-wide">
+                                y
+                            </span>
+                        </span>
                     </a>
 
                     {/* Center - Navigation */}
@@ -117,7 +145,7 @@ export function LandingPage() {
 
                     {/* Right - CTA */}
                     <div className="flex items-center">
-                        <Link to="/dashboard" className="bg-[#1a1a1a] text-white text-[14px] font-medium px-5 py-2.5 rounded-full hover:bg-black transition-colors">
+                        <Link to="/dashboard" className="bg-[#1a1a1a] text-white text-[14px] font-medium px-5 py-2.5 rounded-full hover:bg-black transition-all shadow-sm hover:shadow-md">
                             Get started
                         </Link>
                     </div>

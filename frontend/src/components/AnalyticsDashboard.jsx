@@ -54,7 +54,7 @@ function AnalyticsDashboard({ onClose }) {
   if (loading && !analytics) {
     return (
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-40">
-        <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-2xl border border-gray-300 p-8">
           <div className="flex items-center gap-3">
             <Activity className="animate-spin text-[#1a1a1a]" size={24} />
             <span className="text-[16px] font-medium text-[#1a1a1a]">Loading Analytics...</span>
@@ -88,7 +88,7 @@ function AnalyticsDashboard({ onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-white rounded-2xl p-6 mb-6 shadow-xl border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-300 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[28px] font-medium text-[#1a1a1a] tracking-[-0.02em] mb-1">Store Analytics Overview</h1>
@@ -259,8 +259,8 @@ function AnalyticsDashboard({ onClose }) {
 
               {/* Summary Stats */}
               <div className="mt-6 grid grid-cols-3 gap-4">
-                <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
-                  <div className="text-[24px] font-medium text-blue-600">
+                <div className="bg-white rounded-xl p-4 text-center border border-gray-300 shadow-md">
+                  <div className="text-[24px] font-medium text-gray-700">
                     {sankeyData.links
                       .filter(l => sankeyData.nodes[l.target].name.includes('Window Shopped'))
                       .reduce((sum, link) => sum + (link.value || 0), 0)
@@ -299,7 +299,7 @@ function AnalyticsDashboard({ onClose }) {
                   <span className="text-gray-600">Products</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
                   <span className="text-gray-600">Window Shopped</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -323,7 +323,7 @@ function AnalyticsDashboard({ onClose }) {
               <div className="flex flex-wrap gap-8 mb-6 pb-4 border-b border-gray-100">
                 {/* Window Shopped */}
                 <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-gray-500"></div>
                   <span className="text-[11px] text-gray-500 uppercase tracking-wide">PRODUCT_WINDOW_SHO...</span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-[22px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.windowShopped.value}</span>
@@ -527,7 +527,7 @@ function AnalyticsDashboard({ onClose }) {
 // Metric Card Component
 function MetricCard({ icon, label, value }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:border-gray-200 transition-colors">
+    <div className="bg-white rounded-2xl border border-gray-300 p-4 hover:border-gray-400 shadow-md hover:shadow-lg transition-colors">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-8 h-8 bg-[#f3f3f3] rounded-lg flex items-center justify-center text-[#1a1a1a]">
           {icon}
@@ -542,7 +542,7 @@ function MetricCard({ icon, label, value }) {
 // Chart Card Component
 function ChartCard({ title, children }) {
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+    <div className="bg-white rounded-2xl shadow-xl border border-gray-300 p-6">
       <h3 className="text-[16px] font-medium text-[#1a1a1a] mb-4">{title}</h3>
       {children}
     </div>

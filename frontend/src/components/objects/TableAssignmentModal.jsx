@@ -301,7 +301,7 @@ export function TableAssignmentModal({ isOpen, onClose, objectIds, onAssigned })
             <Button
               variant="secondary"
               onClick={handleCreateNew}
-              className="w-full border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/30"
+              className="w-full border-dashed border-gray-300 text-gray-500 hover:text-[#1a1a1a] hover:border-gray-400 hover:bg-gray-50"
             >
               <Plus size={16} className="mr-2" />
               Create New Table

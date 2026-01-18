@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useStats } from '@/hooks/useStats';
 import { useRecentDetections } from '@/hooks/useRecentDetections';
 import { ClassChart } from '@/components/stats/ClassChart';
+import { ActivityTimeline } from '@/components/stats/ActivityTimeline';
+import { DetectionHeatmap } from '@/components/stats/DetectionHeatmap';
 import { PageTransition } from '@/components/common/PageTransition';
 import { Modal } from '@/components/common/Modal';
 import { ArrowUpRight, ArrowDownRight, Box, Eye, Zap, Tags, Clock, ChevronRight } from 'lucide-react';
@@ -29,7 +31,7 @@ const HalfCircleIcon = () => (
 const DoubleDotIcon = () => (
     <div className="flex gap-0.5">
         <div className="w-2 h-2 bg-[#1a1a1a] rounded-full"></div>
-        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
     </div>
 );
 
@@ -46,22 +48,22 @@ const StatCard = ({ iconType, label, value, subtext, trend }) => {
     };
 
     return (
-        <div className="bg-white rounded-2xl p-5 border border-gray-100">
-            <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                    {renderIcon()}
-                </div>
-                <span className="text-[13px] text-gray-500 font-medium">{label}</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-                <span className="text-[28px] font-medium text-[#1a1a1a] tracking-[-0.02em]">{value}</span>
+        <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-lg hover:shadow-xl hover:border-gray-300 transition-all duration-200">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 flex items-center justify-center">
+                                    {renderIcon()}
+                                </div>
+                                <span className="text-[13px] text-gray-600 font-semibold">{label}</span>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-[28px] font-semibold text-[#1a1a1a] tracking-tight">{value}</span>
                 {trend && (
                     <span className={`text-[12px] font-medium flex items-center ${trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
                         {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                     </span>
                 )}
             </div>
-            {subtext && <p className="text-[12px] text-gray-400 mt-1">{subtext}</p>}
+            {subtext && <p className="text-[12px] text-gray-700 mt-1">{subtext}</p>}
         </div>
     );
 };
@@ -98,7 +100,7 @@ export function Dashboard() {
             <div className="space-y-6">
                 {/* Header */}
                 <div>
-                    <h1 className="text-[28px] font-medium text-[#1a1a1a] tracking-[-0.02em]">Overview</h1>
+                    <h1 className="text-[28px] font-semibold text-[#1a1a1a] tracking-tight">Overview</h1>
                     <p className="text-[14px] text-gray-500 mt-1">Real-time inventory tracking and detection analytics</p>
                 </div>
 
@@ -138,10 +140,10 @@ export function Dashboard() {
                         </div>
 
                         {/* Chart Section */}
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                        <div className="bg-white rounded-2xl border border-gray-300 overflow-hidden shadow-lg">
                             <div className="flex items-center justify-between p-5 border-b border-gray-100">
                                 <div>
-                                    <h3 className="text-[16px] font-medium text-[#1a1a1a]">Detection Analytics</h3>
+                                    <h3 className="text-[16px] font-semibold text-[#1a1a1a]">Detection Analytics</h3>
                                     <p className="text-[12px] text-gray-400 mt-0.5">Object detection over time</p>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -159,14 +161,20 @@ export function Dashboard() {
                                 <ClassChart classDistribution={stats?.class_distribution} />
                             </div>
                         </div>
+
+                        {/* Activity Timeline */}
+                        <ActivityTimeline stats={stats} />
+
+                        {/* Detection Heatmap */}
+                        <DetectionHeatmap />
                     </div>
 
-                    <div className="bg-gradient-to-br from-background-elevated to-background-card rounded-lg border border-border shadow-sm p-6 relative overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-gray-200 p-6 relative overflow-hidden shadow-lg hover:shadow-xl transition-all duration-200">
                         {/* Decorative gradient */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-light/20 to-transparent rounded-bl-full"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-100/30 to-transparent rounded-bl-full"></div>
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
-                            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-[#1a1a1a] flex items-center gap-2">
                                 <div className="grid grid-cols-3 gap-0.5 w-5 h-5">
                                     <div></div>
                                     <div className="w-1.5 h-1.5 bg-[#1a1a1a] rounded-full"></div>
@@ -243,9 +251,9 @@ export function Dashboard() {
                         <div key={i} className="flex gap-4 pb-4 last:pb-0">
                             {/* Timeline line */}
                             <div className="flex flex-col items-center">
-                                <div className={`w-2 h-2 rounded-full mt-2 ${activity.type === 'detection' ? 'bg-blue-500' :
-                                    activity.type === 'sync' ? 'bg-green-500' :
-                                        'bg-orange-500'
+                                <div className={`w-2 h-2 rounded-full mt-2 ${activity.type === 'detection' ? 'bg-[#1a1a1a]' :
+                                    activity.type === 'sync' ? 'bg-gray-500' :
+                                        'bg-gray-700'
                                     }`}></div>
                                 {i < allActivity.length - 1 && (
                                     <div className="w-px h-full bg-gray-200 mt-1"></div>

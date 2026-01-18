@@ -50,7 +50,7 @@ function ShelfAnalytics({ shelfId }) {
 
   if (loading && !analytics) {
     return (
-      <div className="bg-white rounded-2xl p-4 border border-gray-100">
+      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
         <div className="flex items-center gap-2 text-gray-500">
           <Activity className="animate-spin" size={20} />
           <span className="text-[14px]">Loading analytics...</span>
@@ -86,14 +86,14 @@ function ShelfAnalytics({ shelfId }) {
 
       {/* Recent Trends Chart */}
       {dailyTrends && (
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
+        <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
           <h4 className="font-medium text-[#1a1a1a] mb-3 text-[14px]">Recent Trends</h4>
 
           {/* Metrics Summary Row */}
           <div className="flex flex-col gap-3 mb-4 pb-3 border-b border-gray-100">
             {/* Window Shopped / Pickups */}
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <div className="w-2 h-2 rounded-full bg-gray-500"></div>
               <span className="text-[10px] text-gray-500 uppercase tracking-wide">WINDOW_SHOPPED</span>
               <div className="flex items-baseline gap-1">
                 <span className="text-[16px] font-medium text-[#1a1a1a]">{dailyTrends.metrics.pickups.value}</span>
@@ -178,7 +178,7 @@ function ShelfAnalytics({ shelfId }) {
       )}
 
       {/* Product Performance */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100">
+      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
         <h4 className="font-medium text-[#1a1a1a] mb-3 text-[14px]">Product Performance</h4>
         <div className="space-y-2">
           {products.map((product, index) => (
@@ -197,7 +197,7 @@ function ShelfAnalytics({ shelfId }) {
       </div>
 
       {/* User Interactions */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100">
+      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-medium text-[#1a1a1a] text-[14px]">Recent Users</h4>
           <span className="text-[12px] bg-[#f3f3f3] text-[#1a1a1a] px-2.5 py-1 rounded-full">
@@ -212,7 +212,7 @@ function ShelfAnalytics({ shelfId }) {
       </div>
 
       {/* Real-time Event Stream */}
-      <div className="bg-white rounded-2xl p-4 border border-gray-100">
+      <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 bg-[#f3f3f3] rounded-lg flex items-center justify-center">
             <Activity size={14} className="text-[#1a1a1a]" />
@@ -228,11 +228,11 @@ function ShelfAnalytics({ shelfId }) {
 
       {/* Additional Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
+        <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
           <div className="text-[12px] text-gray-500 mb-1">Avg. Dwell Time</div>
           <div className="text-[20px] font-medium text-[#1a1a1a]">{stats.averageDwellTime}s</div>
         </div>
-        <div className="bg-white rounded-2xl p-4 border border-gray-100">
+        <div className="bg-white rounded-2xl p-4 border border-gray-300 shadow-lg">
           <div className="text-[12px] text-gray-500 mb-1">Abandon Rate</div>
           <div className="text-[20px] font-medium text-red-500">
             {((stats.totalReturns / stats.totalPickups) * 100).toFixed(1)}%
@@ -246,7 +246,7 @@ function ShelfAnalytics({ shelfId }) {
 // Stat Card Component
 function StatCard({ icon, label, value }) {
   return (
-    <div className="bg-white rounded-2xl p-3 border border-gray-100">
+    <div className="bg-white rounded-2xl p-3 border border-gray-300 shadow-lg">
       <div className="w-7 h-7 bg-[#f3f3f3] rounded-lg flex items-center justify-center text-[#1a1a1a] mb-2">
         {icon}
       </div>
@@ -297,7 +297,7 @@ function UserCard({ user }) {
 function EventItem({ event }) {
   const getEventStyle = (eventType) => {
     switch (eventType) {
-      case 'WINDOW_SHOPPED': return 'text-blue-600 bg-blue-50';
+      case 'WINDOW_SHOPPED': return 'text-gray-700 bg-gray-50';
       case 'PRODUCT_PURCHASED': return 'text-green-600 bg-green-50';
       case 'CART_ABANDONED': return 'text-red-600 bg-red-50';
       default: return 'text-gray-600 bg-gray-50';

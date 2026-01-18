@@ -40,7 +40,7 @@ export function ObjectCard({ object, onDelete, onView, selected, onSelect }) {
 
     return (
         <div
-            className={`group relative bg-gradient-to-br from-background-elevated to-background-card rounded-lg border overflow-hidden shadow-sm hover:shadow-md hover:border-border-hover transition-all duration-200 cursor-pointer ${selected ? 'ring-2 ring-accent border-accent' : 'border-border'
+            className={`group relative bg-white rounded-lg border overflow-hidden shadow-md hover:shadow-xl hover:border-gray-300 transition-all duration-200 cursor-pointer ${selected ? 'ring-2 ring-[#1a1a1a] border-[#1a1a1a] shadow-lg' : 'border-gray-200'
                 }`}
             onClick={handleCardClick}
         >
@@ -48,10 +48,10 @@ export function ObjectCard({ object, onDelete, onView, selected, onSelect }) {
             {onSelect && (
                 <button
                     onClick={handleCheckboxClick}
-                    className={`absolute top-3 right-3 z-10 w-6 h-6 rounded border-2 flex items-center justify-center transition-all shadow-sm ${
+                    className={`absolute top-3 right-3 z-10 w-6 h-6 rounded border-2 flex items-center justify-center transition-all shadow-md ${
                         selected
-                            ? 'bg-accent border-accent'
-                            : 'border-white bg-white/90 hover:bg-accent hover:border-accent'
+                            ? 'bg-[#1a1a1a] border-[#1a1a1a]'
+                            : 'border-white bg-white/90 hover:bg-[#1a1a1a] hover:border-[#1a1a1a]'
                     }`}
                 >
                     {selected && <Check size={16} className="text-white" strokeWidth={3} />}
@@ -59,7 +59,7 @@ export function ObjectCard({ object, onDelete, onView, selected, onSelect }) {
             )}
 
             {/* Image */}
-            <div className="relative w-full aspect-[4/3] rounded-t-lg overflow-hidden bg-gradient-to-br from-background-subtle to-background-hover border-b border-border">
+            <div className="relative w-full aspect-[4/3] rounded-t-lg overflow-hidden bg-gray-50 border-b border-gray-200">
                 {thumbnail ? (
                     <img
                         src={thumbnail}
@@ -67,21 +67,21 @@ export function ObjectCard({ object, onDelete, onView, selected, onSelect }) {
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                 ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-foreground-muted bg-gradient-to-br from-accent-bg to-background-subtle">
-                        <Activity size={24} className="mb-2 opacity-40 text-accent" />
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                        <Activity size={24} className="mb-2 opacity-40 text-gray-400" />
                         <span className="text-xs">No Preview</span>
                     </div>
                 )}
             </div>
 
             {/* Content */}
-            <div className="p-3 space-y-2 bg-background-elevated">
+            <div className="p-3 space-y-2 bg-white">
                 <div className="flex items-start justify-between">
                     <div>
-                        <h3 className="text-sm font-semibold text-foreground capitalize">
+                        <h3 className="text-sm font-semibold text-[#1a1a1a] capitalize">
                             {object.class_name}
                         </h3>
-                        <span className="text-xs font-mono text-foreground-subtle">#{object.object_id}</span>
+                        <span className="text-xs font-mono text-gray-500">#{object.object_id}</span>
                     </div>
                     <StatusBadge
                         status={object.is_present ? 'success' : 'error'}
@@ -89,9 +89,9 @@ export function ObjectCard({ object, onDelete, onView, selected, onSelect }) {
                     />
                 </div>
 
-                <div className="pt-2 border-t border-border-light flex items-center justify-between text-xs text-foreground-muted">
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
                     <div className="flex items-center gap-1">
-                        <Activity size={12} className="text-accent" />
+                        <Activity size={12} className="text-gray-400" />
                         <span className="font-mono">
                             {formatPosition(object.avg_position_x, object.avg_position_y, object.avg_position_z)}
                         </span>

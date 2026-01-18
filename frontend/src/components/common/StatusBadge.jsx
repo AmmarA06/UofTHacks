@@ -4,11 +4,11 @@ import { Check, X, AlertCircle } from 'lucide-react';
 export function StatusBadge({ status, text, className }) {
     // status: 'success', 'warning', 'error', 'neutral'
     const styles = {
-        success: 'bg-green-50 text-green-700 ring-green-600/20',
-        warning: 'bg-yellow-50 text-yellow-700 ring-yellow-600/20',
-        error: 'bg-red-50 text-red-700 ring-red-600/20',
-        neutral: 'bg-gray-50 text-gray-600 ring-gray-500/10',
-        blue: 'bg-blue-50 text-blue-700 ring-blue-700/10',
+        success: 'bg-green-100 text-green-700 ring-green-500/30',
+        warning: 'bg-yellow-100 text-yellow-700 ring-yellow-500/30',
+        error: 'bg-red-100 text-red-700 ring-red-500/30',
+        neutral: 'bg-gray-100 text-gray-700 ring-gray-400/30',
+        blue: 'bg-gray-100 text-gray-700 ring-gray-400/30',
     };
 
     const icons = {

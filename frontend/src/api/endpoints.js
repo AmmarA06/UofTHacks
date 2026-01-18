@@ -15,6 +15,8 @@ export const objectsAPI = {
 // Statistics endpoints
 export const statsAPI = {
   getSummary: () => api.get('/api/stats/summary'),
+  getTimeline: (hours = 24) => api.get(`/api/stats/timeline?hours=${hours}`),
+  getHeatmap: (days = 7) => api.get(`/api/stats/heatmap?days=${days}`),
 };
 
 // Detections endpoints
