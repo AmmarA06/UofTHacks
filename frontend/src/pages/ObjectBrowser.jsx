@@ -132,7 +132,7 @@ export function ObjectBrowser() {
             </div>
 
             {/* View mode toggle */}
-            <div className="flex bg-background-elevated border border-border p-0.5 rounded-lg shadow-sm gap-0.5">
+            <div className="flex bg-[#f3f3f3] p-1 rounded-full gap-1">
               {[
                 { mode: 'grid', icon: LayoutGrid, label: 'Grid' },
                 { mode: 'list', icon: List, label: 'List' },
@@ -142,14 +142,14 @@ export function ObjectBrowser() {
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={clsx(
-                    "px-3 py-1.5 flex items-center gap-2 rounded-md text-sm font-medium transition-all duration-200",
+                    "px-4 py-2 flex items-center gap-2 rounded-full text-[13px] font-medium transition-all duration-200",
                     viewMode === mode
-                      ? "bg-gradient-to-br from-accent to-accent-hover text-white shadow-sm"
-                      : "text-foreground-muted hover:text-foreground hover:bg-background-hover"
+                      ? "bg-white text-[#1a1a1a] shadow-sm"
+                      : "text-gray-500 hover:text-[#1a1a1a]"
                   )}
                   title={`${label} view`}
                 >
-                  <Icon size={16} strokeWidth={2.5} />
+                  <Icon size={14} />
                   <span className="hidden sm:inline">{label}</span>
                 </button>
               ))}
@@ -158,23 +158,23 @@ export function ObjectBrowser() {
 
           {/* Selection actions */}
           {paginatedObjects.length > 0 && (
-            <div className="flex items-center gap-4 bg-background-subtle border border-border rounded-lg p-3">
+            <div className="flex items-center gap-4 bg-[#f3f3f3] rounded-2xl p-3">
               <Button
                 variant="secondary"
                 onClick={handleSelectAll}
-                className="flex items-center gap-2 bg-background-elevated border border-border hover:bg-background-hover text-foreground"
+                className="flex items-center gap-2"
               >
                 {paginatedObjects.every(obj => selectedObjects.includes(obj.object_id)) ? (
-                  <CheckSquare size={18} />
+                  <CheckSquare size={16} />
                 ) : (
-                  <Square size={18} />
+                  <Square size={16} />
                 )}
                 {paginatedObjects.every(obj => selectedObjects.includes(obj.object_id)) ? 'Deselect Page' : 'Select Page'}
               </Button>
 
               {selectedObjects.length > 0 && (
                 <>
-                  <span className="text-sm text-foreground-muted">
+                  <span className="text-[13px] text-gray-500">
                     {selectedObjects.length} selected
                   </span>
                   <Button
@@ -182,7 +182,7 @@ export function ObjectBrowser() {
                     onClick={handleBulkDelete}
                     className="flex items-center gap-2"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                     Delete Selected
                   </Button>
                 </>
@@ -193,8 +193,8 @@ export function ObjectBrowser() {
 
         {/* Results Count */}
         {!loading && (
-          <div className="text-sm text-foreground-muted border-b border-border-light pb-4">
-            Found <span className="font-medium text-foreground">{objects.length}</span> object{objects.length !== 1 ? 's' : ''}
+          <div className="text-[13px] text-gray-500 border-b border-gray-100 pb-4">
+            Found <span className="font-medium text-[#1a1a1a]">{objects.length}</span> object{objects.length !== 1 ? 's' : ''}
             {objects.length > ITEMS_PER_PAGE && (
               <span> • Showing {startIndex + 1}-{Math.min(endIndex, objects.length)}</span>
             )}

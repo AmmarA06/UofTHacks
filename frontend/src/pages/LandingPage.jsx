@@ -13,6 +13,76 @@ const IdentifyLogo = ({ className = "" }) => (
     </svg>
 );
 
+// Animated number grid component
+const AnimatedNumberGrid = () => {
+    const [numbers, setNumbers] = useState([]);
+    const rows = 14;
+    const cols = 24;
+
+    useEffect(() => {
+        // Initialize grid
+        const initGrid = () => {
+            const grid = [];
+            for (let i = 0; i < rows * cols; i++) {
+                grid.push(Math.floor(Math.random() * 10));
+            }
+            return grid;
+        };
+        setNumbers(initGrid());
+
+        // Animate numbers changing
+        const interval = setInterval(() => {
+            setNumbers(prev => {
+                const newGrid = [...prev];
+                // Change ~10% of numbers each frame
+                for (let i = 0; i < Math.floor(rows * cols * 0.1); i++) {
+                    const idx = Math.floor(Math.random() * rows * cols);
+                    newGrid[idx] = Math.floor(Math.random() * 10);
+                }
+                return newGrid;
+            });
+        }, 150);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="bg-[#f3f3f3] rounded-2xl p-8 flex items-center justify-center min-h-[400px] overflow-hidden">
+            <div className="grid gap-0 font-mono text-[10px] leading-[1.6] select-none"
+                style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+                {numbers.map((num, i) => {
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
+                    const centerX = cols / 2;
+                    const centerY = rows / 2;
+                    const dist = Math.sqrt(Math.pow(row - centerY, 2) + Math.pow(col - centerX, 2));
+                    const maxDist = Math.sqrt(Math.pow(centerX, 2) + Math.pow(centerY, 2));
+                    const normalizedDist = dist / maxDist;
+
+                    // Warm gradient from orange to yellow
+                    const hue = 25 + (row * 2) + (col * 1.5);
+                    const saturation = 60 - normalizedDist * 20;
+                    const lightness = 45 + normalizedDist * 20;
+                    const opacity = 0.9 - normalizedDist * 0.5;
+
+                    return (
+                        <span
+                            key={i}
+                            className="w-3 text-center transition-all duration-300"
+                            style={{
+                                color: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+                                opacity: Math.max(0.2, opacity),
+                            }}
+                        >
+                            {num}
+                        </span>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 export function LandingPage() {
     const [scrolled, setScrolled] = useState(false);
 
@@ -28,21 +98,24 @@ export function LandingPage() {
         <div id="top" className="min-h-screen bg-[#fafafa] font-sans text-[#1a1a1a] selection:bg-black selection:text-white antialiased scroll-smooth">
             {/* Header */}
             <header className={clsx(
-                "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 lg:px-12",
-                scrolled ? "py-4 bg-white/90 backdrop-blur-md border-b border-gray-100" : "py-6 bg-transparent"
+                "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 lg:px-12 h-20",
+                scrolled ? "bg-white/90 backdrop-blur-md border-b border-gray-100" : "bg-transparent"
             )}>
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="max-w-7xl mx-auto flex items-center justify-between h-full relative">
+                    {/* Left - Logo */}
                     <a href="#top" className="flex items-center">
-                        <IdentifyLogo className="text-[#1a1a1a]" />
+                        <img src="/new_logo.png" alt="Identify" className="h-14 w-auto" />
                     </a>
 
+                    {/* Center - Navigation */}
                     <nav className="hidden md:flex items-center gap-8 text-[15px] text-gray-500 absolute left-1/2 -translate-x-1/2">
-                        <a href="#features" className="hover:text-[#1a1a1a] transition-colors">Features</a>
                         <a href="#demo" className="hover:text-[#1a1a1a] transition-colors">Demo</a>
+                        <a href="#features" className="hover:text-[#1a1a1a] transition-colors">Features</a>
                         <a href="#analytics" className="hover:text-[#1a1a1a] transition-colors">Analytics</a>
                         <a href="#agents" className="hover:text-[#1a1a1a] transition-colors">AI Agents</a>
                     </nav>
 
+                    {/* Right - CTA */}
                     <div className="flex items-center">
                         <Link to="/dashboard" className="bg-[#1a1a1a] text-white text-[14px] font-medium px-5 py-2.5 rounded-full hover:bg-black transition-colors">
                             Get started
@@ -191,26 +264,7 @@ export function LandingPage() {
                         </a>
                     </div>
 
-                    <div className="bg-[#f3f3f3] rounded-2xl p-10 lg:p-12 flex items-center justify-center min-h-[400px] overflow-hidden">
-                        <div className="relative">
-                            <div className="text-[9px] font-mono leading-[1.4] text-center select-none">
-                                {Array.from({ length: 12 }).map((_, row) => (
-                                    <div key={row} className="whitespace-nowrap" style={{ opacity: 0.4 + Math.sin(row * 0.5) * 0.3 }}>
-                                        {Array.from({ length: 28 }).map((_, col) => (
-                                            <span
-                                                key={col}
-                                                style={{
-                                                    color: `hsl(${25 + (row * 4) + (col * 2)}, 55%, ${50 + ((row + col) % 15)}%)`,
-                                                }}
-                                            >
-                                                {Math.floor(Math.random() * 10)}
-                                            </span>
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <AnimatedNumberGrid />
                 </div>
             </section>
 
@@ -228,25 +282,49 @@ export function LandingPage() {
                         </a>
                     </div>
 
-                    <div className="bg-[#f3f3f3] rounded-2xl p-10 lg:p-12 flex items-center justify-center min-h-[400px]">
-                        <div className="grid grid-cols-12 gap-2.5">
-                            {Array.from({ length: 120 }).map((_, i) => {
-                                const row = Math.floor(i / 12);
-                                const col = i % 12;
-                                const centerX = 6;
-                                const centerY = 5;
+                    <div className="bg-[#f3f3f3] rounded-2xl p-8 flex items-center justify-center min-h-[400px] overflow-hidden">
+                        <div className="grid grid-cols-10 gap-3 w-full max-w-[320px]">
+                            {Array.from({ length: 100 }).map((_, i) => {
+                                const row = Math.floor(i / 10);
+                                const col = i % 10;
+                                const centerX = 4.5;
+                                const centerY = 4.5;
                                 const dist = Math.sqrt(Math.pow(row - centerY, 2) + Math.pow(col - centerX, 2));
-                                const inCircle = dist < 4.5;
-                                const opacity = inCircle ? (1 - dist * 0.15) : 0.08;
+                                const maxDist = Math.sqrt(2 * Math.pow(4.5, 2));
+                                const normalizedDist = dist / maxDist;
+                                const baseOpacity = 1 - normalizedDist * 0.75;
+                                const baseScale = 1 - normalizedDist * 0.4;
+                                const animationDelay = dist * 0.12;
+
                                 return (
                                     <div
                                         key={i}
-                                        className="w-2 h-2 rounded-full bg-[#1a1a1a]"
-                                        style={{ opacity: Math.max(0.08, opacity) }}
+                                        className="aspect-square rounded-full bg-[#1a1a1a]"
+                                        style={{
+                                            opacity: Math.max(0.08, baseOpacity),
+                                            transform: `scale(${Math.max(0.5, baseScale)})`,
+                                            animation: `pulse-wave 3s ease-in-out ${animationDelay}s infinite`,
+                                        }}
                                     />
                                 );
                             })}
                         </div>
+                        <style>{`
+                            @keyframes pulse-wave {
+                                0%, 100% { 
+                                    transform: scale(var(--base-scale, 0.7)); 
+                                    opacity: var(--base-opacity, 0.15);
+                                }
+                                40% { 
+                                    transform: scale(1.1); 
+                                    opacity: 1;
+                                }
+                                60% { 
+                                    transform: scale(1.05); 
+                                    opacity: 0.9;
+                                }
+                            }
+                        `}</style>
                     </div>
                 </div>
             </section>
@@ -267,7 +345,7 @@ export function LandingPage() {
             {/* Footer */}
             <footer className="py-10 px-6 border-t border-gray-200/60">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-[13px] text-gray-400">
-                    <p>© 2024 Identify Inc.</p>
+                    <p>© 2026 Identify Inc.</p>
                     <div className="flex gap-6 mt-4 md:mt-0">
                         <a href="#" className="hover:text-[#1a1a1a] transition-colors">Privacy</a>
                         <a href="#" className="hover:text-[#1a1a1a] transition-colors">Terms</a>

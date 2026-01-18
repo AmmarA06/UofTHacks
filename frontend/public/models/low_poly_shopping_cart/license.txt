@@ -1,0 +1,11 @@
+Model Information:
+* title:	Low Poly Shopping Cart
+* source:	https://sketchfab.com/3d-models/low-poly-shopping-cart-dfffb6c91b4744eaae6e0e2dcc8da914
+* author:	MauricioPB (https://sketchfab.com/mauriciopb1111)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Low Poly Shopping Cart" (https://sketchfab.com/3d-models/low-poly-shopping-cart-dfffb6c91b4744eaae6e0e2dcc8da914) by MauricioPB (https://sketchfab.com/mauriciopb1111) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
