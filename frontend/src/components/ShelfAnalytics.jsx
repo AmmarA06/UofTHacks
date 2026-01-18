@@ -3,8 +3,8 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
-import { TrendingUp, Users, Clock, Activity, Package, DollarSign } from 'lucide-react';
-import { fetchShelfAnalytics, fetchRealtimeEvents } from '../services/amplitudeService';
+import { TrendingUp, Users, Clock, Activity, Package, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
+import { fetchShelfAnalytics, fetchRealtimeEvents, fetchShelfDailyTrends } from '../services/amplitudeService';
 
 /**
  * Shelf-specific Analytics - Micro view for individual shelf
@@ -14,6 +14,7 @@ import { fetchShelfAnalytics, fetchRealtimeEvents } from '../services/amplitudeS
 function ShelfAnalytics({ shelfId }) {
   const [analytics, setAnalytics] = useState(null);
   const [realtimeEvents, setRealtimeEvents] = useState([]);
+  const [dailyTrends, setDailyTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,12 +22,14 @@ function ShelfAnalytics({ shelfId }) {
     const loadShelfAnalytics = async () => {
       try {
         setLoading(true);
-        const [analyticsData, eventsData] = await Promise.all([
+        const [analyticsData, eventsData, trendsData] = await Promise.all([
           fetchShelfAnalytics(shelfId),
-          fetchRealtimeEvents(shelfId)
+          fetchRealtimeEvents(shelfId),
+          fetchShelfDailyTrends(shelfId)
         ]);
         setAnalytics(analyticsData);
         setRealtimeEvents(eventsData);
+        setDailyTrends(trendsData);
         setError(null);
       } catch (err) {
         setError('Failed to load shelf analytics');
@@ -87,25 +90,98 @@ function ShelfAnalytics({ shelfId }) {
         />
       </div>
 
-      {/* 24-Hour Activity Chart */}
-      <div className="bg-white rounded-lg p-4 shadow-lg">
-        <h4 className="font-semibold text-gray-800 mb-3 text-sm">24-Hour Activity</h4>
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={hourlyData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hour" fontSize={11} />
-            <YAxis fontSize={11} />
-            <Tooltip />
-            <Legend iconSize={10} wrapperStyle={{ fontSize: '11px' }} />
-            <Line type="monotone" dataKey="pickups" stroke="#3b82f6" strokeWidth={2} name="Window Shopped" />
-            <Line type="monotone" dataKey="purchases" stroke="#10b981" strokeWidth={2} name="Purchases" />
-          </LineChart>
-        </ResponsiveContainer>
-        <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
-          <Clock size={12} />
-          Peak hour: {peakHour.hour}:00 ({peakHour.pickups} interactions)
+      {/* Recent Trends Chart */}
+      {dailyTrends && (
+        <div className="bg-white rounded-lg p-4 shadow-lg">
+          <h4 className="font-semibold text-gray-800 mb-3 text-sm">Recent Trends</h4>
+          
+          {/* Metrics Summary Row */}
+          <div className="flex flex-col gap-3 mb-4 pb-3 border-b border-gray-200">
+            {/* Window Shopped / Pickups */}
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-[10px] text-gray-500 uppercase tracking-wide">WINDOW_SHOPPED</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold text-gray-900">{dailyTrends.metrics.pickups.value}</span>
+                <span className={`flex items-center text-[10px] ${dailyTrends.metrics.pickups.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {dailyTrends.metrics.pickups.change >= 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+                  {Math.abs(dailyTrends.metrics.pickups.change)}%
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-400">yesterday</span>
+              <span className="text-[10px] text-gray-400">from {dailyTrends.metrics.pickups.comparisonDate}</span>
+            </div>
+            
+            {/* Purchased */}
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-[10px] text-gray-500 uppercase tracking-wide">PURCHASED</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold text-gray-900">{dailyTrends.metrics.purchases.value}</span>
+                <span className={`flex items-center text-[10px] ${dailyTrends.metrics.purchases.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {dailyTrends.metrics.purchases.change >= 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+                  {Math.abs(dailyTrends.metrics.purchases.change)}%
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-400">yesterday</span>
+              <span className="text-[10px] text-gray-400">from {dailyTrends.metrics.purchases.comparisonDate}</span>
+            </div>
+          </div>
+          
+          {/* Line Chart */}
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={dailyTrends.dailyData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: '#6b7280' }}
+                interval={0}
+                tickFormatter={(value) => value || ''}
+              />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: '#6b7280' }}
+                label={{ value: 'Uniques', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280', fontSize: 10 } }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  fontSize: '11px'
+                }}
+                labelFormatter={(value, payload) => {
+                  if (payload && payload[0]) {
+                    const data = payload[0].payload;
+                    return data.date || data.time;
+                  }
+                  return value;
+                }}
+              />
+              <Line 
+                type="linear" 
+                dataKey="pickups" 
+                stroke="#3b82f6" 
+                strokeWidth={2} 
+                dot={{ r: 2, fill: '#3b82f6' }}
+                name="Window Shopped" 
+              />
+              <Line 
+                type="linear" 
+                dataKey="purchases" 
+                stroke="#10b981" 
+                strokeWidth={2} 
+                dot={{ r: 2, fill: '#10b981' }}
+                name="Purchases" 
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      </div>
+      )}
 
       {/* Product Performance */}
       <div className="bg-white rounded-lg p-4 shadow-lg">
