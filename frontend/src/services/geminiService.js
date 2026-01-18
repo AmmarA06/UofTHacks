@@ -144,9 +144,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A1",
       label: "Storage Shelf A1",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
-        count: 0
+        count: 12
       },
       normalizedPos: {
         x: 0.33,
@@ -161,9 +161,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A2",
       label: "Storage Shelf A2",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
-        count: 0
+        item: 'Cell Phones',
+        productType: 'cell_phone',
+        count: 8
       },
       normalizedPos: {
         x: 0.415,
@@ -178,7 +178,7 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A3",
       label: "Storage Shelf A3",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
         count: 0
       },
@@ -195,8 +195,8 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A4",
       label: "Storage Shelf A4",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
+        item: 'Cell Phones',
+        productType: 'cell_phone',
         count: 0
       },
       normalizedPos: {
@@ -212,7 +212,7 @@ export async function analyzeFloorPlan(imageFile) {
       id: "A5",
       label: "Storage Shelf A5",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
         count: 0
       },
@@ -229,8 +229,8 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B1",
       label: "Storage Shelf B1",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
+        item: 'Cell Phones',
+        productType: 'cell_phone',
         count: 0
       },
       normalizedPos: {
@@ -246,7 +246,7 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B2",
       label: "Storage Shelf B2",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
         count: 0
       },
@@ -263,8 +263,8 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B3",
       label: "Storage Shelf B3",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
+        item: 'Cell Phones',
+        productType: 'cell_phone',
         count: 0
       },
       normalizedPos: {
@@ -280,9 +280,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B4",
       label: "Storage Shelf B4",
       metadata: {
-        item: 'product name',
+        item: 'Water Bottles',
         productType: 'water_bottle',
-        count: 0
+        count: 15
       },
       normalizedPos: {
         x: 0.585,
@@ -297,9 +297,9 @@ export async function analyzeFloorPlan(imageFile) {
       id: "B5",
       label: "Storage Shelf B5",
       metadata: {
-        item: 'product name',
-        productType: 'water_bottle',
-        count: 0
+        item: 'Cell Phones',
+        productType: 'cell_phone',
+        count: 6
       },
       normalizedPos: {
         x: 0.67,
