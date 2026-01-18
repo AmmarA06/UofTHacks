@@ -551,6 +551,203 @@ export const fetchSankeyData = async () => {
   };
 };
 
+/**
+ * Fetch daily trends data for the Recent Trends chart
+ * Returns point-based data over the last 3 days with percentage comparisons
+ */
+export const fetchDailyTrends = async () => {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const now = Date.now();
+  const DAY_MS = 24 * 3600000;
+  
+  // Create point-based data - 10 points per day over 3 days
+  const dailyData = [];
+  const pointsPerDay = 10;
+  const totalPoints = 30; // 10 points per day * 3 days
+  const intervalMS = (3 * DAY_MS) / totalPoints;
+  
+  // Start from Jan 16 (3 days ago)
+  const startDate = new Date();
+  startDate.setDate(16);
+  startDate.setMonth(0); // January
+  const startTime = startDate.getTime();
+  
+  // Generate zigzag data points
+  for (let i = 0; i < totalPoints; i++) {
+    const pointTime = startTime + (i * intervalMS);
+    const date = new Date(pointTime);
+    
+    // Show date label only at the start of each day
+    const isNewDay = i % pointsPerDay === 0;
+    const formattedDate = isNewDay ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    
+    // Create zigzag pattern with random variations
+    const baseWindow = 2 + Math.sin(i * 0.5) * 2 + Math.random() * 2;
+    const baseAbandoned = 0 + Math.sin(i * 0.7 + 1) * 1 + Math.random() * 1;
+    const basePurchased = 0 + Math.sin(i * 0.3 + 2) * 1 + Math.random() * 1;
+    
+    dailyData.push({
+      date: formattedDate,
+      fullDate: date.toISOString().split('T')[0],
+      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      windowShopped: Math.max(0, Math.round(baseWindow)),
+      cartAbandoned: Math.max(0, Math.round(baseAbandoned)),
+      purchased: Math.max(0, Math.round(basePurchased))
+    });
+  }
+  
+  // Calculate yesterday's total values for metrics
+  const yesterdayStart = totalPoints - 20; // Last full day (points 10-20)
+  const yesterdayEnd = totalPoints - 10;
+  const comparisonStart = 0; // First day (points 0-10)
+  const comparisonEnd = 10;
+  
+  const sumRange = (start, end, field) => {
+    return dailyData.slice(start, end).reduce((sum, d) => sum + d[field], 0);
+  };
+  
+  // Calculate totals for yesterday and comparison day
+  const yesterdayTotals = {
+    windowShopped: sumRange(yesterdayStart, yesterdayEnd, 'windowShopped'),
+    cartAbandoned: sumRange(yesterdayStart, yesterdayEnd, 'cartAbandoned'),
+    purchased: sumRange(yesterdayStart, yesterdayEnd, 'purchased')
+  };
+  
+  const comparisonTotals = {
+    windowShopped: sumRange(comparisonStart, comparisonEnd, 'windowShopped'),
+    cartAbandoned: sumRange(comparisonStart, comparisonEnd, 'cartAbandoned'),
+    purchased: sumRange(comparisonStart, comparisonEnd, 'purchased')
+  };
+  
+  // Calculate percentage changes
+  const calcPercentChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+  
+  // Get date labels for comparison
+  const yesterdayDate = dailyData.find((d, i) => i >= yesterdayStart && d.date)?.date || 'Yesterday';
+  const comparisonDate = dailyData.find((d, i) => i >= comparisonStart && d.date)?.date || 'N/A';
+  
+  const metrics = {
+    windowShopped: {
+      value: yesterdayTotals.windowShopped,
+      change: calcPercentChange(yesterdayTotals.windowShopped, comparisonTotals.windowShopped),
+      comparisonDate: comparisonDate
+    },
+    cartAbandoned: {
+      value: yesterdayTotals.cartAbandoned,
+      change: calcPercentChange(yesterdayTotals.cartAbandoned, comparisonTotals.cartAbandoned),
+      comparisonDate: comparisonDate
+    },
+    purchased: {
+      value: yesterdayTotals.purchased,
+      change: calcPercentChange(yesterdayTotals.purchased, comparisonTotals.purchased),
+      comparisonDate: comparisonDate
+    }
+  };
+  
+  return {
+    dailyData,
+    metrics
+  };
+};
+
+/**
+ * Fetch daily trends data for a specific shelf
+ * Returns point-based data over the last 3 days with percentage comparisons
+ */
+export const fetchShelfDailyTrends = async (shelfId) => {
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  const now = Date.now();
+  const DAY_MS = 24 * 3600000;
+  
+  // Create point-based data - 10 points per day over 3 days
+  const dailyData = [];
+  const pointsPerDay = 10;
+  const totalPoints = 30; // 10 points per day * 3 days
+  const intervalMS = (3 * DAY_MS) / totalPoints;
+  
+  // Start from Jan 16 (3 days ago)
+  const startDate = new Date();
+  startDate.setDate(16);
+  startDate.setMonth(0); // January
+  const startTime = startDate.getTime();
+  
+  // Generate zigzag data points specific to this shelf
+  for (let i = 0; i < totalPoints; i++) {
+    const pointTime = startTime + (i * intervalMS);
+    const date = new Date(pointTime);
+    
+    // Show date label only at the start of each day
+    const isNewDay = i % pointsPerDay === 0;
+    const formattedDate = isNewDay ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    
+    // Create zigzag pattern with random variations (scaled down for individual shelf)
+    const baseWindow = 1 + Math.sin(i * 0.5) * 1.5 + Math.random() * 1.5;
+    const basePurchased = 0 + Math.sin(i * 0.3 + 2) * 0.8 + Math.random() * 0.8;
+    
+    dailyData.push({
+      date: formattedDate,
+      fullDate: date.toISOString().split('T')[0],
+      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      pickups: Math.max(0, Math.round(baseWindow)),
+      purchases: Math.max(0, Math.round(basePurchased))
+    });
+  }
+  
+  // Calculate yesterday's total values for metrics
+  const yesterdayStart = totalPoints - 20; // Last full day (points 10-20)
+  const yesterdayEnd = totalPoints - 10;
+  const comparisonStart = 0; // First day (points 0-10)
+  const comparisonEnd = 10;
+  
+  const sumRange = (start, end, field) => {
+    return dailyData.slice(start, end).reduce((sum, d) => sum + d[field], 0);
+  };
+  
+  // Calculate totals for yesterday and comparison day
+  const yesterdayTotals = {
+    pickups: sumRange(yesterdayStart, yesterdayEnd, 'pickups'),
+    purchases: sumRange(yesterdayStart, yesterdayEnd, 'purchases')
+  };
+  
+  const comparisonTotals = {
+    pickups: sumRange(comparisonStart, comparisonEnd, 'pickups'),
+    purchases: sumRange(comparisonStart, comparisonEnd, 'purchases')
+  };
+  
+  // Calculate percentage changes
+  const calcPercentChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+  
+  // Get date labels for comparison
+  const yesterdayDate = dailyData.find((d, i) => i >= yesterdayStart && d.date)?.date || 'Yesterday';
+  const comparisonDate = dailyData.find((d, i) => i >= comparisonStart && d.date)?.date || 'N/A';
+  
+  const metrics = {
+    pickups: {
+      value: yesterdayTotals.pickups,
+      change: calcPercentChange(yesterdayTotals.pickups, comparisonTotals.pickups),
+      comparisonDate: comparisonDate
+    },
+    purchases: {
+      value: yesterdayTotals.purchases,
+      change: calcPercentChange(yesterdayTotals.purchases, comparisonTotals.purchases),
+      comparisonDate: comparisonDate
+    }
+  };
+  
+  return {
+    dailyData,
+    metrics
+  };
+};
+
 export default {
   trackEvent,
   fetchOverallAnalytics,
@@ -559,5 +756,7 @@ export default {
   fetchProductFunnel,
   getUniqueUsers,
   getUniqueProducts,
-  fetchSankeyData
+  fetchSankeyData,
+  fetchDailyTrends,
+  fetchShelfDailyTrends
 };
