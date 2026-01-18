@@ -186,23 +186,20 @@ export function LandingPage() {
             <section id="demo" className="px-6 lg:px-12 pb-32">
 
                 <div className="max-w-7xl mx-auto">
-                    <div
-                        className="relative w-full h-[500px] md:h-[600px] rounded-2xl overflow-hidden"
-                        style={{
-                            background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 25%, #0f0f0f 50%, #1a1a1a 75%, #0a0a0a 100%)',
-                        }}
-                    >
-                        {/* Subtle noise overlay */}
-                        <div className="absolute inset-0 opacity-[0.03]" style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                        }} />
+                    <div className="relative w-full h-[500px] md:h-[600px] rounded-2xl overflow-hidden">
+                        <video
+                            className="w-full h-full object-cover"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                        >
+                            <source src="/demo-video.mp4" type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
 
-                        {/* Gradient orbs */}
-                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-gray-800/30 to-transparent rounded-full blur-3xl" />
-                        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-tl from-gray-700/20 to-transparent rounded-full blur-3xl" />
-
-                        {/* Content */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                        {/* Optional overlay for the "Watch demo" button */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/20 hover:bg-black/30 transition-all">
                             <motion.h2
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
